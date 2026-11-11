@@ -1,0 +1,12 @@
+<section class="orders-page section-wrap">
+  <div class="page-kicker"><p class="eyebrow">YOUR RALS ACCOUNT</p><h1>YOUR <span>ORDERS.</span></h1><p>Every great fit has a story. Here's where yours is.</p></div>
+  <p class="error-banner" *ngIf="error">{{error}}</p>
+  <div class="orders-list" *ngIf="orders.length; else noOrders">
+    <article class="order-card" *ngFor="let o of orders">
+      <div class="order-top"><div><small>ORDER ID</small><h3>{{o.orderNumber}}</h3></div><span class="status-chip">{{o.status}}</span></div>
+      <div class="order-info"><span>PLACED {{o.createdAt | date:'mediumDate'}}</span><span>PAYMENT: {{o.paymentStatus}}</span><strong>{{o.total / 100 | currency:'INR'}}</strong></div>
+      <div class="order-items"><div *ngFor="let i of o.items"><span class="mini-product">R</span><div><b>{{i.variant.product.name}}</b><small>{{i.variant.size}} / {{i.variant.color}} · Qty {{i.quantity}}</small></div></div></div>
+    </article>
+  </div>
+  <ng-template #noOrders><div class="empty-state"><span>✳</span><h2>NOTHING HERE. YET.</h2><p>Your next favourite fit is waiting.</p><a routerLink="/" class="btn btn-lime">START SHOPPING ↗</a></div></ng-template>
+</section>

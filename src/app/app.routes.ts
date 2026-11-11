@@ -1,0 +1,21 @@
+import { Routes } from '@angular/router';
+import { StoreComponent } from './store.component';
+import { LoginComponent } from './login.component';
+import { CheckoutComponent } from './checkout.component';
+import { OrdersComponent } from './orders.component';
+import { AdminComponent } from './admin.component';
+import { ProfileComponent } from './profile.component';
+import { FavoritesComponent } from './favorites.component';
+import { CartComponent } from './cart.component';
+export const routes: Routes = [
+  { path: '', component: StoreComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'checkout', component: CheckoutComponent },
+  { path: 'orders', component: OrdersComponent },
+  { path: 'admin', component: AdminComponent },
+  { path: 'payment-result', component: CheckoutComponent },
+  { path: 'profile', component: ProfileComponent },
+  { path: 'wishlist', component: FavoritesComponent },
+  { path: 'cart', component: CartComponent },
+  { path: '**', redirectTo: '' }
+];

@@ -1,0 +1,140 @@
+
+<section class="favorites-page">
+
+  <!-- Page heading -->
+  <div class="favorites-heading">
+    <div>
+      <p class="fav-eyebrow">RALS / YOUR COLLECTION</p>
+      <h1>YOUR <span>FAVOURITES.</span></h1>
+      <p class="fav-subtitle">
+        The styles you love, all in one place.
+      </p>
+    </div>
+
+    <div class="fav-count" *ngIf="products.length">
+      <strong>{{ products.length }}</strong>
+      <span>SAVED STYLES</span>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="favorites-empty" *ngIf="products.length === 0">
+
+    <div class="empty-heart">♡</div>
+
+    <p class="fav-eyebrow">YOUR WISHLIST IS WAITING</p>
+
+    <h2>NOTHING SAVED <span>YET.</span></h2>
+
+    <p>
+      Found something you love?
+      Tap the heart and keep it here for later.
+    </p>
+
+    <button class="fav-shop-btn" (click)="shopNow()">
+      EXPLORE COLLECTION ↗
+    </button>
+
+  </div>
+
+  <!-- Product Collection -->
+  <ng-container *ngIf="products.length">
+
+    <div class="favorites-toolbar">
+      <span>YOUR SAVED STYLES</span>
+      <button (click)="api.clearFavorites()">
+        CLEAR ALL ×
+      </button>
+    </div>
+
+    <div class="favorites-grid">
+
+      <article class="fav-product" *ngFor="let p of products">
+
+        <div class="fav-image">
+
+          <img
+            [src]="image(p)"
+            [alt]="p.name"
+            loading="lazy"
+          >
+
+          <span class="fav-label">SAVED FOR YOU</span>
+
+          <button
+            class="fav-remove"
+            type="button"
+            (click)="remove(p)"
+            aria-label="Remove from favourites">
+            ♥
+          </button>
+
+          <div class="fav-quick-actions">
+
+            <select
+              [(ngModel)]="selected[p.id]"
+              [ngModelOptions]="{standalone:true}"
+              aria-label="Choose size and colour">
+
+              <option value="">SELECT SIZE / COLOUR</option>
+
+              <option
+                *ngFor="let v of p.variants"
+                [value]="v.id"
+                [disabled]="v.stock < 1">
+
+                {{ v.size }} · {{ v.color }}
+                {{ v.stock < 1 ? '(SOLD OUT)' : '' }}
+
+              </option>
+
+            </select>
+
+            <button
+              type="button"
+              (click)="addToBag(p)">
+              ADD TO BAG +
+            </button>
+
+          </div>
+
+        </div>
+
+        <div class="fav-product-info">
+
+          <div>
+            <h3>{{ p.name }}</h3>
+            <p>{{ p.category?.name || 'RALS ESSENTIAL' }}</p>
+          </div>
+
+          <strong>
+            {{ p.price / 100 | currency:'INR':'symbol':'1.0-0' }}
+          </strong>
+
+        </div>
+
+        <div class="fav-price" *ngIf="p.compareAt">
+
+          <del>
+            {{ p.compareAt / 100 | currency:'INR':'symbol':'1.0-0' }}
+          </del>
+
+          <span>
+            {{ ((p.compareAt - p.price) / p.compareAt * 100) | number:'1.0-0' }}% OFF
+          </span>
+
+        </div>
+
+      </article>
+
+    </div>
+
+    <div class="fav-bottom">
+      <button class="fav-shop-btn" (click)="shopNow()">
+        CONTINUE SHOPPING ↗
+      </button>
+    </div>
+
+  </ng-container>
+
+</section>

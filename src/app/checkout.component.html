@@ -1,0 +1,27 @@
+<section class="checkout-page section-wrap">
+  <div class="page-kicker"><p class="eyebrow">RALS / CHECKOUT</p><h1>LET'S MAKE IT <span>YOURS.</span></h1><p>Almost there. Add your delivery details to complete your order.</p></div>
+  <div class="checkout-layout">
+    <div class="checkout-main">
+      <div class="checkout-card" *ngIf="message"><div class="status-symbol">✓</div><h2>ORDER UPDATE</h2><p class="notice-banner">{{message}}</p><a routerLink="/" class="btn btn-dark">CONTINUE SHOPPING</a></div>
+      <form class="checkout-card" (ngSubmit)="placeOrder()" *ngIf="!isResult">
+        <div class="step-title"><span>01</span><div><h2>DELIVERY ADDRESS</h2><p>Where should we send your RALS fit?</p></div></div>
+        <div class="form-grid">
+          <label>FULL NAME<input name="fullName" [(ngModel)]="address.fullName" placeholder="Full name" required></label>
+          <label>MOBILE NUMBER<input name="phone" [(ngModel)]="address.phone" placeholder="10-digit mobile" required></label>
+          <label class="span2">ADDRESS LINE 1<input name="line1" [(ngModel)]="address.line1" placeholder="House / flat / street" required></label>
+          <label class="span2">LANDMARK (OPTIONAL)<input name="line2" [(ngModel)]="address.line2" placeholder="Nearby landmark"></label>
+          <label>CITY<input name="city" [(ngModel)]="address.city" placeholder="City" required></label>
+          <label>STATE<input name="state" [(ngModel)]="address.state" placeholder="State" required></label>
+          <label>PIN CODE<input name="postalCode" [(ngModel)]="address.postalCode" placeholder="6-digit PIN" required></label>
+        </div>
+        <div class="step-title payment-step"><span>02</span><div><h2>PAYMENT METHOD</h2><p>Choose how you'd like to pay.</p></div></div>
+        <label class="payment-option"><input type="radio" name="payment" [(ngModel)]="paymentMethod" value="CASHFREE"><span><b>Pay online</b><small>UPI · Cards · Net Banking</small></span><strong>↗</strong></label>
+        <label class="payment-option"><input type="radio" name="payment" [(ngModel)]="paymentMethod" value="COD"><span><b>Cash on delivery</b><small>Pay when your order arrives</small></span><strong>₹</strong></label>
+        <p class="error-banner" *ngIf="error">{{error}}</p>
+        <button class="btn btn-lime full-width" [disabled]="busy">{{busy ? 'PLEASE WAIT…' : 'PLACE ORDER ↗'}}</button>
+        <p class="secure-note">▣ SECURE CHECKOUT · YOUR DETAILS ARE PROTECTED</p>
+      </form>
+    </div>
+    <aside class="checkout-aside"><p class="eyebrow">GOOD CHOICE.</p><h3>YOUR ORDER</h3><div class="aside-product"><div class="aside-placeholder">R</div><div><b>RALS ESSENTIALS</b><small>Your selected styles</small></div></div><div class="summary-line"><span>Shipping</span><b>FREE*</b></div><div class="summary-line"><span>Discount</span><b>Apply RALS10 at checkout</b></div><div class="summary-total"><span>PAYMENT</span><b>Calculated securely</b></div><p class="aside-note">*Free shipping on eligible orders above ₹999. Final total is calculated by the server.</p></aside>
+  </div>
+</section>

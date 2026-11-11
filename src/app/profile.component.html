@@ -1,0 +1,225 @@
+
+<section class="profile-page">
+
+  <!-- Page Heading -->
+  <div class="profile-heading">
+    <div>
+      <p class="profile-eyebrow">RALS / YOUR ACCOUNT</p>
+      <h1>MY <span>PROFILE.</span></h1>
+      <p>Manage your account and track your style journey.</p>
+    </div>
+
+    <a routerLink="/" class="profile-shop-btn">
+      CONTINUE SHOPPING ↗
+    </a>
+  </div>
+
+  <!-- Login Required -->
+  <div class="profile-error" *ngIf="error && !user">
+    <h2>Welcome to RALS</h2>
+    <p>{{ error }}</p>
+    <a routerLink="/login">LOGIN TO YOUR ACCOUNT →</a>
+  </div>
+
+  <ng-container *ngIf="user">
+
+    <!-- Welcome Card -->
+    <div class="profile-welcome">
+
+      <div class="profile-user">
+        <div class="profile-avatar-large">
+          {{ initials }}
+        </div>
+
+        <div>
+          <span class="profile-member-tag">
+            <span></span> RALS MEMBER
+          </span>
+
+          <h2>HELLO, {{ user.name | uppercase }}!</h2>
+          <p>Welcome back. Your style starts here.</p>
+        </div>
+      </div>
+
+      <a routerLink="/orders" class="profile-orders-btn">
+        VIEW ALL ORDERS ↗
+      </a>
+
+    </div>
+
+    <!-- Statistics -->
+    <div class="profile-stats">
+
+      <article class="profile-stat">
+        <span>TOTAL ORDERS</span>
+        <strong>{{ orders.length }}</strong>
+        <small>Your shopping history</small>
+      </article>
+
+      <article class="profile-stat">
+        <span>DELIVERED</span>
+        <strong>{{ deliveredCount }}</strong>
+        <small>Successfully delivered</small>
+      </article>
+
+      <article class="profile-stat">
+        <span>IN PROGRESS</span>
+        <strong>{{ pendingCount }}</strong>
+        <small>Orders being processed</small>
+      </article>
+
+      <article class="profile-stat">
+        <span>TOTAL SPENT</span>
+        <strong>{{ totalSpent / 100 | currency:'INR':'symbol':'1.0-0' }}</strong>
+        <small>Your order total</small>
+      </article>
+
+    </div>
+
+    <!-- Main Profile Layout -->
+    <div class="profile-layout">
+
+      <!-- Sidebar -->
+      <aside class="profile-sidebar">
+
+        <p class="profile-menu-heading">MY ACCOUNT</p>
+
+        <a href="#personal-info" class="profile-menu-item active">
+          <span>♙</span> Personal Information
+        </a>
+
+        <a routerLink="/orders" class="profile-menu-item">
+          <span>▣</span> My Orders
+        </a>
+
+        <a href="#addresses" class="profile-menu-item">
+          <span>⌖</span> My Addresses
+        </a>
+
+        <a routerLink="/wishlist" class="profile-menu-item">
+          <span>♡</span> My Wishlist
+        </a>
+
+        <div class="profile-menu-divider"></div>
+
+        <button class="profile-logout" (click)="logout()">
+          ↗ LOG OUT
+        </button>
+
+      </aside>
+
+      <!-- Personal Information -->
+      <div class="profile-content">
+
+        <section class="profile-info-card" id="personal-info">
+
+          <div class="profile-section-title">
+            <div>
+              <p class="profile-eyebrow">YOUR DETAILS</p>
+              <h2>PERSONAL INFORMATION</h2>
+            </div>
+            <span class="profile-readonly">ACCOUNT DETAILS</span>
+          </div>
+
+          <div class="profile-info-grid">
+
+            <div class="profile-field">
+              <label>FULL NAME</label>
+              <div>{{ user.name || 'Not provided' }}</div>
+            </div>
+
+            <div class="profile-field">
+              <label>EMAIL ADDRESS</label>
+              <div>{{ user.email || 'Not provided' }}</div>
+            </div>
+
+            <div class="profile-field">
+              <label>PHONE NUMBER</label>
+              <div>{{ user.phone || 'Not provided' }}</div>
+            </div>
+
+            <div class="profile-field">
+              <label>ACCOUNT TYPE</label>
+              <div>{{ user.role || 'CUSTOMER' }}</div>
+            </div>
+
+          </div>
+
+          <p class="profile-note">
+            To change your account information, contact RALS support.
+          </p>
+
+        </section>
+
+        <!-- Recent Orders -->
+        <section class="profile-info-card">
+
+          <div class="profile-section-title">
+            <div>
+              <p class="profile-eyebrow">YOUR PURCHASES</p>
+              <h2>RECENT ORDERS</h2>
+            </div>
+
+            <a routerLink="/orders" class="profile-view-all">
+              VIEW ALL ↗
+            </a>
+          </div>
+
+          <div *ngIf="loading" class="profile-loading">
+            Loading your orders...
+          </div>
+
+          <div
+            *ngFor="let order of orders.slice(0, 3)"
+            class="profile-order">
+
+            <div>
+              <strong>{{ order.orderNumber }}</strong>
+              <small>{{ order.createdAt | date:'mediumDate' }}</small>
+            </div>
+
+            <div class="profile-order-status">
+              {{ order.status }}
+            </div>
+
+            <strong>
+              {{ order.total / 100 | currency:'INR' }}
+            </strong>
+
+          </div>
+
+          <div
+            *ngIf="!loading && orders.length === 0"
+            class="profile-empty">
+
+            <span>✳</span>
+            <h3>NO ORDERS YET</h3>
+            <p>Your next favourite outfit is waiting.</p>
+            <a routerLink="/">EXPLORE COLLECTION ↗</a>
+
+          </div>
+
+        </section>
+
+        <!-- Addresses -->
+        <section class="profile-info-card" id="addresses">
+          <div class="profile-section-title">
+            <div>
+              <p class="profile-eyebrow">DELIVERY DETAILS</p>
+              <h2>MY ADDRESSES</h2>
+            </div>
+          </div>
+
+          <p class="profile-note">
+            Your saved delivery addresses will appear here.
+            Address management will be available once the address API
+            is connected.
+          </p>
+        </section>
+
+      </div>
+    </div>
+
+  </ng-container>
+
+</section>

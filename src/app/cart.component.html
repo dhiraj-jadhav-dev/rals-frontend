@@ -1,0 +1,203 @@
+<section class="rals-cart-page">
+
+  <!-- Heading -->
+  <div class="cart-heading">
+    <div>
+      <p class="cart-eyebrow">RALS / SHOPPING BAG</p>
+      <h1>YOUR <span>BAG.</span></h1>
+      <p>Your style, ready to go.</p>
+    </div>
+
+    <div class="cart-item-count" *ngIf="cartItems.length">
+      <strong>{{ totalQuantity }}</strong>
+      <span>ITEMS</span>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="cart-message" *ngIf="loading">
+    Loading your shopping bag...
+  </div>
+
+  <!-- Error -->
+  <div class="cart-message cart-error" *ngIf="error">
+    {{ error }}
+    <button (click)="loadCart()">TRY AGAIN</button>
+  </div>
+
+  <!-- Empty Cart -->
+  <div class="cart-empty" *ngIf="!loading && !error && cartItems.length === 0">
+
+    <div class="cart-empty-icon">♧</div>
+
+    <p class="cart-eyebrow">YOUR NEXT LOOK IS WAITING</p>
+
+    <h2>YOUR BAG IS <span>EMPTY.</span></h2>
+
+    <p>
+      Looks like you haven't added anything yet.
+      Explore our latest collection and find your next favourite.
+    </p>
+
+    <button class="cart-primary-btn" (click)="continueShopping()">
+      EXPLORE COLLECTION ↗
+    </button>
+
+  </div>
+
+  <!-- Cart Content -->
+  <div class="cart-layout" *ngIf="!loading && !error && cartItems.length">
+
+    <!-- Products -->
+    <div class="cart-products">
+
+      <div class="cart-products-header">
+        <span>PRODUCT DETAILS</span>
+        <span>PRICE</span>
+      </div>
+
+      <article class="cart-product" *ngFor="let item of cartItems">
+
+        <div class="cart-product-image">
+          <img [src]="image(item.product)" [alt]="item.product.name">
+        </div>
+
+        <div class="cart-product-details">
+
+          <div class="cart-product-title">
+            <div>
+              <p class="cart-product-category">
+                {{ item.product.category?.name || 'RALS ESSENTIAL' }}
+              </p>
+
+              <h3>{{ item.product.name }}</h3>
+            </div>
+
+            <button class="cart-remove-mobile" (click)="removeItem(item.variantId)" aria-label="Remove product">
+              ×
+            </button>
+          </div>
+
+          <p class="cart-variant">
+            SIZE: {{ item.size }} <span>·</span>
+            COLOUR: {{ item.color }}
+          </p>
+
+          <p class="cart-stock" *ngIf="item.stock > 0">
+            {{ item.stock }} AVAILABLE
+          </p>
+
+          <p class="cart-out-stock" *ngIf="item.stock < 1">
+            OUT OF STOCK
+          </p>
+
+          <div class="cart-quantity">
+
+            <button (click)="updateQuantity(item, -1)" [disabled]="item.quantity <= 1">
+              −
+            </button>
+
+            <span>{{ item.quantity }}</span>
+
+            <button (click)="updateQuantity(item, 1)" [disabled]="item.quantity >= item.stock">
+              +
+            </button>
+
+          </div>
+
+          <button class="cart-remove-desktop" (click)="removeItem(item.variantId)">
+            REMOVE ×
+          </button>
+
+        </div>
+
+        <div class="cart-product-price">
+          <strong>
+            {{ (item.product.price * item.quantity) / 100
+            | currency:'INR':'symbol':'1.0-0' }}
+          </strong>
+
+          <small *ngIf="item.quantity > 1">
+            {{ item.product.price / 100
+            | currency:'INR':'symbol':'1.0-0' }} / item
+          </small>
+        </div>
+
+      </article>
+
+      <button class="cart-continue-btn" (click)="continueShopping()">
+        ← CONTINUE SHOPPING
+      </button>
+
+    </div>
+
+    <!-- Order Summary -->
+    <aside class="cart-summary">
+
+      <p class="cart-eyebrow">GOOD CHOICE.</p>
+      <h2>ORDER SUMMARY</h2>
+
+      <div class="cart-summary-brand">
+        <div class="cart-summary-logo">R</div>
+        <div>
+          <strong>RALS ESSENTIALS</strong>
+          <small>Your selected styles</small>
+        </div>
+      </div>
+
+      <div class="cart-summary-row">
+        <span>Shipping</span>
+        <strong>
+          {{ subtotal >= shippingThreshold ? 'FREE' : 'Calculated at checkout' }}
+        </strong>
+      </div>
+
+      <div class="cart-summary-row">
+        <span>Shipping</span>
+        <strong>
+          {{ shipping === 0 ? 'FREE' : (shipping / 100 | currency:'INR') }}
+        </strong>
+      </div>
+
+      <div class="cart-free-shipping" *ngIf="remainingForFreeShipping > 0">
+        Add
+        {{ remainingForFreeShipping / 100 | currency:'INR' }}
+        more to unlock FREE SHIPPING.
+      </div>
+
+      <div class="cart-free-shipping cart-free-success" *ngIf="remainingForFreeShipping === 0">
+        ✦ YOU UNLOCKED FREE SHIPPING!
+      </div>
+
+      <div class="cart-summary-total">
+        <span>ESTIMATED TOTAL</span>
+        <strong>
+          {{ total / 100 | currency:'INR':'symbol':'1.0-0' }}
+        </strong>
+      </div>
+
+      <p class="cart-tax-note">
+        Final total and applicable charges are confirmed at checkout.
+      </p>
+
+      <button class="cart-primary-btn cart-checkout-btn" (click)="checkout()"
+        [disabled]="hasUnavailableStock">
+        PROCEED TO CHECKOUT ↗
+      </button>
+
+      <div class="cart-security">
+        <span>♧</span>
+        SECURE CHECKOUT · YOUR DETAILS ARE PROTECTED
+      </div>
+
+      <div class="cart-benefits">
+        <p>✦ FREE SHIPPING ON ORDERS ABOVE ₹999</p>
+        <p>↻ EASY 7-DAY RETURNS</p>
+        <p>▣ SECURE PAYMENT OPTIONS</p>
+      </div>
+
+    </aside>
+
+  </div>
+
+</section>

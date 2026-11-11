@@ -1,0 +1,17 @@
+<section class="auth-page">
+  <div class="auth-visual"><img src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1200&q=85" alt="RALS fashion editorial"><div><p class="eyebrow light-eyebrow">RALS COMMUNITY</p><h2>STYLE IS<br>PERSONAL.</h2></div></div>
+  <div class="auth-form-wrap"><div class="auth-card">
+    <p class="eyebrow">WELCOME TO RALS</p><h1>{{mode === 'login' ? 'Good to see you.' : 'Join the movement.'}}</h1>
+    <p class="auth-intro">Sign in to discover your next favourite fit.</p>
+    <div class="tabs"><button type="button" (click)="mode='login';error=''" [class.active]="mode==='login'">SIGN IN</button><button type="button" (click)="mode='register';error=''" [class.active]="mode==='register'">CREATE ACCOUNT</button></div>
+    <form (ngSubmit)="submit()">
+      <label *ngIf="mode==='register'">FULL NAME<input name="name" [(ngModel)]="name" placeholder="Your name" required></label>
+      <label>EMAIL ADDRESS<input name="email" [(ngModel)]="email" type="email" placeholder="you@example.com" required></label>
+      <label>PASSWORD<input name="password" [(ngModel)]="password" type="password" placeholder="At least 8 characters" minlength="8" required></label>
+      <label *ngIf="mode==='register'">PHONE (OPTIONAL)<input name="phone" [(ngModel)]="phone" placeholder="Mobile number"></label>
+      <p class="error-banner" *ngIf="error">{{error}}</p>
+      <button class="btn btn-lime full-width">{{mode==='login' ? 'SIGN IN ↗' : 'CREATE ACCOUNT ↗'}}</button>
+    </form>
+    <a routerLink="/" class="back-link">← BACK TO SHOP</a>
+  </div></div>
+</section>

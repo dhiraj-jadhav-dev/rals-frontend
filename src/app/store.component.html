@@ -1,0 +1,121 @@
+<section class="home-hero">
+  <img class="hero-photo"
+    src="https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=2200&q=88"
+    alt="RALS contemporary menswear collection">
+  <div class="hero-shade"></div>
+  <div class="hero-copy">
+    <p class="eyebrow light-eyebrow">NEW COLLECTION / DROP 01</p>
+    <h1>DRESS<br>DIFFERENT.<br><span>FEEL RALS.</span></h1>
+    <p class="hero-subtitle">Contemporary essentials for every mood.</p>
+    <a class="btn btn-lime" href="#collection">SHOP NEW DROP <span>↗</span></a>
+  </div>
+  <div class="hero-index"><b>01</b><span> / 03</span><i></i><i></i><i></i></div>
+  <div class="hero-side-note">RALS STUDIO — EST. 2026</div>
+</section>
+
+<section class="category-strip" id="collections">
+  <button class="category-tile" (click)="chooseCategory('ALL')"><span
+      class="category-circle category-new">01</span><b>NEW IN</b></button>
+  <button class="category-tile" (click)="chooseCategory('shirt')"><span
+      class="category-circle category-shirt">02</span><b>SHIRTS</b></button>
+  <button class="category-tile" (click)="chooseCategory('tee')"><span
+      class="category-circle category-tee">03</span><b>T-SHIRTS</b></button>
+  <button class="category-tile" (click)="chooseCategory('bottom')"><span
+      class="category-circle category-bottom">04</span><b>BOTTOMWEAR</b></button>
+  <button class="category-tile" (click)="chooseCategory('jacket')"><span
+      class="category-circle category-jacket">05</span><b>JACKETS</b></button>
+  <button class="category-tile" (click)="chooseCategory('co-ord')"><span
+      class="category-circle category-coord">06</span><b>CO-ORDS</b></button>
+  <button class="category-tile" (click)="chooseCategory('ALL')"><span
+      class="category-circle category-offer">%</span><b>OFFERS</b></button>
+</section>
+
+<section class="collection-section section-wrap" id="collection">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">CURATED FOR YOUR ROTATION</p>
+      <h2>TRENDING <span>NOW.</span></h2>
+    </div>
+    <div class="collection-tools">
+      <label class="search-box"><span>⌕</span><input [(ngModel)]="search" (ngModelChange)="applyFilters()"
+          placeholder="Search styles"></label>
+      <select [(ngModel)]="sort" (ngModelChange)="applyFilters()" aria-label="Sort products">
+        <option value="featured">Featured</option>
+        <option value="price-low">Price: low to high</option>
+        <option value="price-high">Price: high to low</option>
+      </select>
+    </div>
+  </div>
+  <div class="filter-pills">
+    <button [class.active]="activeCategory==='ALL'" (click)="chooseCategory('ALL')">ALL</button>
+    <button [class.active]="activeCategory==='shirt'" (click)="chooseCategory('shirt')">SHIRTS</button>
+    <button [class.active]="activeCategory==='tee'" (click)="chooseCategory('tee')">T-SHIRTS</button>
+    <button [class.active]="activeCategory==='bottom'" (click)="chooseCategory('bottom')">BOTTOMWEAR</button>
+  </div>
+  <p class="error-banner" *ngIf="error">{{error}}</p>
+  <p class="success-banner" *ngIf="added">{{added}}</p>
+  <div class="product-grid" *ngIf="filtered.length; else emptyProducts">
+    <article class="product-card" *ngFor="let p of filtered; let i = index">
+      <div class="product-visual">
+        <img [src]="image(p)" [alt]="p.name" loading="lazy">
+        <span class="product-label" [class.lime-label]="i % 3 !== 0">{{i % 3 === 0 ? 'BESTSELLER' : 'NEW DROP'}}</span>
+        <button class="store-fav-button" type="button" (click)="toggleFavorite(p)"
+          [class.is-favorite]="api.isFavorite(p.id)" [attr.aria-label]="api.isFavorite(p.id)
+    ? 'Remove from favourites'
+    : 'Add to favourites'">
+
+          {{ api.isFavorite(p.id) ? '♥' : '♡' }}
+
+        </button>
+        <div class="quick-size">
+          <select [(ngModel)]="selected[p.id]" [ngModelOptions]="{standalone:true}" aria-label="Choose size and colour">
+            <option value="">SELECT SIZE / COLOUR</option>
+            <option *ngFor="let v of p.variants" [value]="v.id" [disabled]="v.stock < 1">{{v.size}} · {{v.color}}
+              {{v.stock < 1 ? '(SOLD OUT)' : '' }}</option>
+          </select>
+          <button type="button" (click)="add(p)">ADD TO BAG +</button>
+        </div>
+      </div>
+      <div class="product-meta">
+        <div>
+          <h3>{{p.name}}</h3>
+          <p>{{p.category?.name || 'RALS ESSENTIAL'}}</p>
+        </div><strong>{{p.price / 100 | currency:'INR':'symbol':'1.0-0'}}</strong>
+      </div>
+      <div class="product-price" *ngIf="p.compareAt"><del>{{p.compareAt / 100 |
+          currency:'INR':'symbol':'1.0-0'}}</del><span>{{((p.compareAt-p.price)/p.compareAt*100) | number:'1.0-0'}}%
+          OFF</span></div>
+    </article>
+  </div>
+  <ng-template #emptyProducts>
+    <div class="empty-state">
+      <span>✳</span>
+      <h3>No styles found</h3>
+      <p>Try another search or category.</p>
+    </div>
+  </ng-template>
+</section>
+
+<section class="campaign-banner">
+  <div class="campaign-image"><img
+      src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=85"
+      alt="RALS summer collection"></div>
+  <div class="campaign-copy">
+    <p class="eyebrow">THE NEW ROTATION</p>
+    <h2>YOUR STYLE.<br>YOUR RULES.</h2>
+    <p>Fresh fits. Clean silhouettes. No compromises.</p><a href="#collection" class="btn btn-dark">EXPLORE THE DROP
+      ↗</a>
+  </div>
+  <div class="campaign-offer"><strong>10<span>%</span></strong><b>OFF YOUR<br>FIRST ORDER</b><small>USE
+      CODE</small><em>RALS10</em></div>
+</section>
+
+<section class="benefit-row">
+  <div><span>↗</span><b>FREE SHIPPING</b><small>On orders above ₹999</small></div>
+  <div><span>⟳</span><b>EASY RETURNS</b><small>7-day return policy</small></div>
+  <div><span>▣</span><b>SECURE PAYMENTS</b><small>UPI, cards & net banking</small></div>
+  <div><span>⌂</span><b>CASH ON DELIVERY</b><small>Available across India</small></div>
+</section>
+
+<div class="floating-bag" *ngIf="cartCount > 0"><span>YOUR BAG · {{cartCount}} ITEM(S)</span><button
+    class="btn btn-lime" (click)="checkout()">VIEW BAG / CHECKOUT ↗</button></div>
