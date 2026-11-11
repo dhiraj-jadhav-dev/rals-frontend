@@ -31,7 +31,7 @@ export class ApiService {
   private router = inject(Router);
 
   // Change this to your backend ngrok URL when using mobile.
-  private base = "http://localhost:3000/api";
+  private base = "https://rals-backend.onrender.com/api";
 
   private favoritesKey = "rals_favorites";
 
