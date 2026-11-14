@@ -44,6 +44,11 @@ export class StoreComponent implements OnInit {
     this.api.products().subscribe({
       next: (products) => {
         this.products = products || [];
+        for (const product of this.products) {
+          if (this.selected[product.id] === undefined) {
+            this.selected[product.id] = "";
+          }
+        }
         this.error = "";
         this.applyFilters();
       },
