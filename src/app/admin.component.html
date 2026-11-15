@@ -2,26 +2,51 @@
   <aside class="admin-sidebar">
     <a routerLink="/" class="admin-logo">RALS<span>®</span></a>
     <p>STORE CONTROL</p>
-    <a class="selected" href="#overview">▦ &nbsp; Overview</a>
-    <a href="#hero-banner">✦ &nbsp; Hero Banner</a>
-    <a href="#catalogue">▣ &nbsp; Products</a>
-    <a href="#orders">▤ &nbsp; Orders</a>
+    <div role="tablist" aria-label="Store control sections">
+      <button class="admin-tab" type="button" role="tab" id="overview-tab"
+        aria-controls="overview-panel" [attr.aria-selected]="activeTab === 'overview'"
+        [class.selected]="activeTab === 'overview'" (click)="activeTab = 'overview'">
+        ▦ &nbsp; Overview
+      </button>
+      <button class="admin-tab" type="button" role="tab" id="hero-banner-tab"
+        aria-controls="hero-banner-panel" [attr.aria-selected]="activeTab === 'hero-banner'"
+        [class.selected]="activeTab === 'hero-banner'" (click)="activeTab = 'hero-banner'">
+        ✦ &nbsp; Hero Banner
+      </button>
+      <button class="admin-tab" type="button" role="tab" id="products-tab"
+        aria-controls="products-panel" [attr.aria-selected]="activeTab === 'products'"
+        [class.selected]="activeTab === 'products'" (click)="activeTab = 'products'">
+        ▣ &nbsp; Products
+      </button>
+      <button class="admin-tab" type="button" role="tab" id="orders-tab"
+        aria-controls="orders-panel" [attr.aria-selected]="activeTab === 'orders'"
+        [class.selected]="activeTab === 'orders'" (click)="activeTab = 'orders'">
+        ▤ &nbsp; Orders
+      </button>
+      <button class="admin-tab" type="button" role="tab" id="inventory-tab"
+        aria-controls="inventory-panel" [attr.aria-selected]="activeTab === 'inventory'"
+        [class.selected]="activeTab === 'inventory'" (click)="activeTab = 'inventory'">
+        ▤ &nbsp; Inventory
+      </button>
+    </div>
     <a routerLink="/">↗ &nbsp; View store</a>
   </aside>
   <main class="admin-content">
-    <header class="admin-top" id="overview">
-      <div><p class="eyebrow">RALS / CONTROL ROOM</p><h1>OVERVIEW.</h1></div>
+    <header class="admin-top">
+      <div><p class="eyebrow">RALS / CONTROL ROOM</p><h1>{{ activeTabTitle }}.</h1></div>
       <span class="admin-live">● STORE PANEL</span>
     </header>
     <p class="admin-intro">Manage your products and keep orders moving.</p>
     <p class="success-banner" *ngIf="message">{{ message }}</p>
     <p class="error-banner" *ngIf="error">{{ error }}</p>
-    <div class="admin-stats">
+    <div class="admin-stats admin-tab-panel" id="overview-panel" role="tabpanel"
+      aria-labelledby="overview-tab" [hidden]="activeTab !== 'overview'">
       <div><small>STORE STATUS</small><b>ACTIVE</b><span>● Ready for orders</span></div>
       <div><small>ORDERS LOADED</small><b>{{ orders.length }}</b><span>From your API</span></div>
       <div><small>PRODUCTS</small><b>{{ products.length }}</b><span>In your catalogue</span></div>
     </div>
-    <section class="admin-panel hero-banner-management" id="hero-banner">
+    <section class="admin-panel hero-banner-management admin-tab-panel" id="hero-banner-panel"
+      role="tabpanel" aria-labelledby="hero-banner-tab" [hidden]="activeTab !== 'hero-banner'">
       <div class="panel-heading">
         <div><p class="eyebrow">STOREFRONT</p><h2>HERO BANNER MANAGEMENT</h2></div>
         <span>✦</span>
@@ -112,8 +137,10 @@
       </div>
     </section>
 
-    <div class="admin-grid">
-      <section class="admin-panel" id="catalogue">
+    <div class="admin-tab-panel" id="products-panel" role="tabpanel"
+      aria-labelledby="products-tab" [hidden]="activeTab !== 'products'">
+      <div class="admin-grid">
+        <section class="admin-panel" id="catalogue">
         <div class="panel-heading"><div><p class="eyebrow">CATALOGUE</p><h2>{{ editingProductId ? 'EDIT PRODUCT' : 'ADD A PRODUCT' }}</h2></div><span>＋</span></div>
         <form (ngSubmit)="addProduct()">
           <label>PRODUCT NAME<input name="name" [(ngModel)]="product.name" placeholder="Relaxed Fit Shirt" required></label>
@@ -140,7 +167,9 @@
           <div class="variant-editor" *ngIf="editingProduct as currentProduct; else newVariantEditor">
             <div class="inventory-heading">
               <b>SIZE-WISE STOCK</b>
-              <a href="#inventory">MANAGE VARIANTS ↓</a>
+              <button type="button" class="refresh-button" (click)="activeTab = 'inventory'">
+                MANAGE VARIANTS ↓
+              </button>
             </div>
             <p class="muted" *ngIf="!currentProduct.variants.length">No sizes have been added to this product.</p>
             <div class="variant-input-row" *ngFor="let variant of currentProduct.variants">
@@ -174,42 +203,27 @@
             <button class="refresh-button" type="button" *ngIf="editingProductId" (click)="cancelEdit()">CANCEL EDIT</button>
           </div>
         </form>
-      </section>
-
-      <section class="admin-panel" id="orders">
-        <div class="panel-heading"><div><p class="eyebrow">FULFILMENT</p><h2>RECENT ORDERS</h2></div><button class="refresh-button" type="button" (click)="loadOrders()">↻ REFRESH</button></div>
-        <article *ngFor="let o of orders" class="admin-order">
-          <div><b>{{ o.orderNumber }}</b><small>{{ o.user?.name }} · {{ o.paymentStatus }}</small><strong>{{ o.total / 100 | currency:'INR' }}</strong></div>
-          <div class="admin-order-actions">
-            <select #status [value]="o.status">
-              <option value="PENDING">PENDING</option><option value="CONFIRMED">CONFIRMED</option>
-              <option value="PROCESSING">PROCESSING</option><option value="SHIPPED">SHIPPED</option>
-              <option value="DELIVERED">DELIVERED</option><option value="CANCELLED">CANCELLED</option>
-            </select>
-            <button class="btn btn-dark" type="button" (click)="updateOrder(o.id, status.value)">UPDATE</button>
+        </section>
+      </div>
+      <section class="admin-panel product-list" id="products-list">
+        <div class="panel-heading"><div><p class="eyebrow">CATALOGUE</p><h2>PRODUCTS LIST</h2></div><button class="refresh-button" type="button" (click)="loadProducts()">↻ REFRESH</button></div>
+        <p class="muted" *ngIf="loadingProducts">Loading products…</p>
+        <p class="muted" *ngIf="!loadingProducts && !products.length">No products found.</p>
+        <article class="product-row" *ngFor="let p of products; trackBy: trackById">
+          <div class="admin-product-images" *ngIf="p.images.length; else noProductImage">
+            <img *ngFor="let image of p.images" [src]="image.url" [alt]="image.alt || p.name">
           </div>
+          <ng-template #noProductImage><div class="product-placeholder">R</div></ng-template>
+          <div class="product-info"><b>{{ p.name }}</b><small>{{ p.slug }} · {{ p.category?.name || 'Uncategorised' }}</small></div>
+          <strong>{{ p.price / 100 | currency:'INR' }}</strong>
+          <button class="refresh-button" type="button" (click)="startEdit(p)">EDIT</button>
+          <button class="delete-button" type="button" [disabled]="deletingProductId !== null" (click)="deleteProduct(p)">{{ deletingProductId === p.id ? 'DELETING…' : 'DELETE' }}</button>
         </article>
-        <p *ngIf="!orders.length" class="muted">No orders available yet.</p>
       </section>
     </div>
 
-    <section class="admin-panel product-list">
-      <div class="panel-heading"><div><p class="eyebrow">CATALOGUE</p><h2>PRODUCTS LIST</h2></div><button class="refresh-button" type="button" (click)="loadProducts()">↻ REFRESH</button></div>
-      <p class="muted" *ngIf="loadingProducts">Loading products…</p>
-      <p class="muted" *ngIf="!loadingProducts && !products.length">No products found.</p>
-      <article class="product-row" *ngFor="let p of products; trackBy: trackById">
-        <div class="admin-product-images" *ngIf="p.images.length; else noProductImage">
-          <img *ngFor="let image of p.images" [src]="image.url" [alt]="image.alt || p.name">
-        </div>
-        <ng-template #noProductImage><div class="product-placeholder">R</div></ng-template>
-        <div class="product-info"><b>{{ p.name }}</b><small>{{ p.slug }} · {{ p.category?.name || 'Uncategorised' }}</small></div>
-        <strong>{{ p.price / 100 | currency:'INR' }}</strong>
-        <button class="refresh-button" type="button" (click)="startEdit(p)">EDIT</button>
-        <button class="delete-button" type="button" [disabled]="deletingProductId !== null" (click)="deleteProduct(p)">{{ deletingProductId === p.id ? 'DELETING…' : 'DELETE' }}</button>
-      </article>
-    </section>
-
-    <section class="admin-panel product-list" id="inventory">
+    <section class="admin-panel product-list admin-tab-panel" id="inventory-panel"
+      role="tabpanel" aria-labelledby="inventory-tab" [hidden]="activeTab !== 'inventory'">
       <div class="panel-heading"><div><p class="eyebrow">STOCK CONTROL</p><h2>PRODUCT INVENTORY</h2></div><button class="refresh-button" type="button" (click)="loadProducts()">↻ REFRESH</button></div>
       <p class="muted" *ngIf="loadingProducts">Loading inventory…</p>
       <article class="inventory-product" *ngFor="let p of products; trackBy: trackById">
@@ -232,6 +246,22 @@
           <button class="btn btn-dark" type="button" [disabled]="inventorySavingProductId === p.id" (click)="saveInventory(p)">{{ inventorySavingProductId === p.id ? 'SAVING…' : 'SAVE STOCK' }}</button>
         </div>
       </article>
+    </section>
+    <section class="admin-panel admin-tab-panel" id="orders-panel" role="tabpanel"
+      aria-labelledby="orders-tab" [hidden]="activeTab !== 'orders'">
+      <div class="panel-heading"><div><p class="eyebrow">FULFILMENT</p><h2>RECENT ORDERS</h2></div><button class="refresh-button" type="button" (click)="loadOrders()">↻ REFRESH</button></div>
+      <article *ngFor="let o of orders" class="admin-order">
+        <div><b>{{ o.orderNumber }}</b><small>{{ o.user?.name }} · {{ o.paymentStatus }}</small><strong>{{ o.total / 100 | currency:'INR' }}</strong></div>
+        <div class="admin-order-actions">
+          <select #status [value]="o.status">
+            <option value="PENDING">PENDING</option><option value="CONFIRMED">CONFIRMED</option>
+            <option value="PROCESSING">PROCESSING</option><option value="SHIPPED">SHIPPED</option>
+            <option value="DELIVERED">DELIVERED</option><option value="CANCELLED">CANCELLED</option>
+          </select>
+          <button class="btn btn-dark" type="button" (click)="updateOrder(o.id, status.value)">UPDATE</button>
+        </div>
+      </article>
+      <p *ngIf="!orders.length" class="muted">No orders available yet.</p>
     </section>
   </main>
 </section>

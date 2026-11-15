@@ -35,6 +35,7 @@ interface PendingImage {
 }
 
 type HeroImageTarget = "desktop" | "mobile";
+type AdminTab = "overview" | "hero-banner" | "products" | "orders" | "inventory";
 
 const DEFAULT_HERO_BANNER: HeroBanner = {
   id: "home",
@@ -59,6 +60,7 @@ const DEFAULT_HERO_BANNER: HeroBanner = {
 })
 export class AdminComponent implements OnInit {
   private api = inject(ApiService);
+  activeTab: AdminTab = "overview";
   orders: any[] = [];
   products: Product[] = [];
   loadingProducts = false;
@@ -87,6 +89,21 @@ export class AdminComponent implements OnInit {
   mobileHeroPreview: string | null = null;
   removeDesktopImage = false;
   removeMobileImage = false;
+
+  get activeTabTitle(): string {
+    switch (this.activeTab) {
+      case "hero-banner":
+        return "HERO BANNER";
+      case "products":
+        return "PRODUCTS";
+      case "orders":
+        return "ORDERS";
+      case "inventory":
+        return "INVENTORY";
+      default:
+        return "OVERVIEW";
+    }
+  }
 
   ngOnInit(): void {
     this.load();
