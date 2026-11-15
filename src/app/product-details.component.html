@@ -1,0 +1,120 @@
+<main class="product-details-page">
+  <div class="product-detail-breadcrumb">
+    <a routerLink="/">HOME</a><span>/</span>
+    <span>{{ product?.name || "PRODUCT" }}</span>
+  </div>
+
+  <div class="product-detail-message" *ngIf="loading">LOADING PRODUCT...</div>
+  <div class="product-detail-message product-detail-error" *ngIf="!loading && error">
+    <p>{{ error }}</p>
+    <a class="detail-button detail-button-dark" routerLink="/">BACK TO SHOP</a>
+  </div>
+
+  <div class="product-detail-grid" *ngIf="!loading && product as p">
+    <section class="product-detail-gallery" aria-label="Product images">
+      <div class="product-detail-main-image">
+        <img [src]="mainImage" [alt]="mainImageAlt"
+          [class.changing]="isImageTransitioning">
+        <div class="detail-gallery-arrows" *ngIf="images.length > 1">
+          <button type="button" aria-label="Previous image" (click)="stepImage(-1)">‹</button>
+          <button type="button" aria-label="Next image" (click)="stepImage(1)">›</button>
+        </div>
+      </div>
+      <div class="product-detail-thumbnails" *ngIf="images.length > 1">
+        <button type="button" *ngFor="let image of images; let i = index"
+          [class.active]="i === selectedImageIndex"
+          [attr.aria-label]="'Show product image ' + (i + 1)"
+          (click)="changeImage(i)">
+          <img [src]="image.url" [alt]="image.alt || (p.name + ' image ' + (i + 1))">
+        </button>
+      </div>
+    </section>
+
+    <section class="product-detail-info">
+      <p class="eyebrow">{{ p.category?.name || "RALS ESSENTIALS" }}</p>
+      <h1>{{ p.name }}</h1>
+      <div class="product-detail-price">
+        <strong>{{ p.price / 100 | currency:'INR':'symbol':'1.0-0' }}</strong>
+        <del *ngIf="p.compareAt && p.compareAt > p.price">
+          {{ p.compareAt / 100 | currency:'INR':'symbol':'1.0-0' }}
+        </del>
+        <span class="detail-sale" *ngIf="discountPercentage">
+          {{ discountPercentage }}% OFF
+        </span>
+      </div>
+      <p class="product-detail-description">{{ p.description }}</p>
+      <button class="detail-favorite-button" type="button" (click)="toggleFavorite()">
+        {{ api.isFavorite(p.id) ? "♥ REMOVE FROM FAVOURITES" : "♡ ADD TO FAVOURITES" }}
+      </button>
+      <p class="detail-availability" *ngIf="hasAvailableStock(p)">
+        <span></span> IN STOCK
+      </p>
+      <p class="detail-availability detail-unavailable" *ngIf="!hasAvailableStock(p)">
+        OUT OF STOCK
+      </p>
+
+      <div class="detail-option" *ngIf="colors.length > 1">
+        <div class="detail-option-heading"><strong>COLOUR</strong><span>{{ selectedColor || "SELECT A COLOUR" }}</span></div>
+        <div class="detail-color-options">
+          <button type="button" *ngFor="let color of colors"
+            [class.selected]="selectedColor === color"
+            [disabled]="!colorHasStock(color)"
+            (click)="selectColor(color)">
+            {{ color }}<small *ngIf="!colorHasStock(color)"> · SOLD OUT</small>
+          </button>
+        </div>
+      </div>
+      <div class="detail-option" *ngIf="colors.length === 1">
+        <div class="detail-option-heading"><strong>COLOUR</strong><span>{{ colors[0] }}</span></div>
+      </div>
+
+      <div class="detail-option">
+        <div class="detail-option-heading">
+          <strong>SIZE</strong>
+          <span *ngIf="selectedSize">SELECTED: {{ selectedSize }}</span>
+          <span *ngIf="!selectedSize && colors.length > 1">SELECT A COLOUR FIRST</span>
+        </div>
+        <div class="detail-size-options">
+          <button type="button" *ngFor="let size of sizes"
+            [class.selected]="selectedSize === size"
+            [disabled]="!selectedColor || !variantForSize(size) || variantForSize(size)?.stock === 0"
+            [attr.aria-label]="size + (variantForSize(size)?.stock ? ', in stock' : ', out of stock')"
+            (click)="selectSize(size)">
+            {{ size }}
+            <small *ngIf="selectedColor && (!variantForSize(size) || variantForSize(size)?.stock === 0)">
+              OUT OF STOCK
+            </small>
+          </button>
+        </div>
+      </div>
+
+      <div class="detail-stock-count" *ngIf="selectedVariant && availableStock > 0">
+        {{ availableStock }} AVAILABLE
+      </div>
+
+      <div class="detail-purchase-row" *ngIf="selectedVariant">
+        <div class="detail-quantity" aria-label="Quantity">
+          <button type="button" aria-label="Decrease quantity" (click)="decreaseQuantity()"
+            [disabled]="quantity <= 1">−</button>
+          <span>{{ quantity }}</span>
+          <button type="button" aria-label="Increase quantity" (click)="increaseQuantity()"
+            [disabled]="quantity >= maxQuantity">+</button>
+        </div>
+        <span class="detail-stock-warning" *ngIf="maxQuantity === 0">
+          {{ availableStock < maxCartItemQuantity
+            ? "Available units are already in your bag."
+            : "Maximum " + maxCartItemQuantity + " per size per order." }}
+        </span>
+      </div>
+
+      <button class="detail-button detail-add-button" type="button" (click)="addToCart()"
+        [disabled]="!selectedVariant || maxQuantity < quantity || availableStock < 1">
+        ADD TO BAG <span>↗</span>
+      </button>
+      <p class="detail-add-success" *ngIf="added">
+        Added to your bag. <a routerLink="/cart">VIEW BAG</a>
+      </p>
+      <p class="detail-login-note">Secure checkout · Easy 7-day returns</p>
+    </section>
+  </div>
+</main>

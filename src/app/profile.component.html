@@ -118,11 +118,94 @@
               <p class="profile-eyebrow">YOUR DETAILS</p>
               <h2>PERSONAL INFORMATION</h2>
             </div>
-            <span class="profile-readonly">ACCOUNT DETAILS</span>
+            <button
+              *ngIf="!editingProfile"
+              type="button"
+              class="profile-edit-button"
+              (click)="startProfileEdit()">
+              EDIT DETAILS
+            </button>
           </div>
 
-          <div class="profile-info-grid">
+          <p *ngIf="profileLoading" class="profile-loading">
+            Loading your account details...
+          </p>
 
+          <p *ngIf="profileError" class="profile-form-error" role="alert">
+            {{ profileError }}
+          </p>
+
+          <p *ngIf="profileSuccess" class="profile-form-success" role="status">
+            {{ profileSuccess }}
+          </p>
+
+          <form
+            *ngIf="editingProfile"
+            #profileEditor="ngForm"
+            class="profile-editor"
+            (ngSubmit)="saveProfile()">
+            <div class="profile-info-grid">
+              <div class="profile-field">
+                <label for="profile-name">FULL NAME</label>
+                <input
+                  id="profile-name"
+                  name="name"
+                  class="profile-input"
+                  [(ngModel)]="profileForm.name"
+                  required
+                  maxlength="100"
+                  autocomplete="name">
+              </div>
+
+              <div class="profile-field">
+                <label for="profile-email">EMAIL ADDRESS</label>
+                <input
+                  id="profile-email"
+                  name="email"
+                  class="profile-input"
+                  [(ngModel)]="profileForm.email"
+                  type="email"
+                  required
+                  maxlength="254"
+                  autocomplete="email">
+              </div>
+
+              <div class="profile-field">
+                <label for="profile-phone">PHONE NUMBER</label>
+                <input
+                  id="profile-phone"
+                  name="phone"
+                  class="profile-input"
+                  [(ngModel)]="profileForm.phone"
+                  type="tel"
+                  maxlength="20"
+                  autocomplete="tel">
+              </div>
+
+              <div class="profile-field">
+                <label>ACCOUNT TYPE</label>
+                <div>{{ user.role || 'CUSTOMER' }}</div>
+              </div>
+            </div>
+
+            <div class="profile-form-actions">
+              <button
+                type="button"
+                class="profile-secondary-button"
+                [disabled]="savingProfile"
+                (click)="cancelProfileEdit()">
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                class="profile-save-button"
+                [disabled]="profileEditor.invalid || savingProfile">
+                {{ savingProfile ? 'SAVING...' : 'SAVE CHANGES' }}
+              </button>
+            </div>
+          </form>
+
+          <div *ngIf="!editingProfile" class="profile-info-grid">
             <div class="profile-field">
               <label>FULL NAME</label>
               <div>{{ user.name || 'Not provided' }}</div>
@@ -142,12 +225,7 @@
               <label>ACCOUNT TYPE</label>
               <div>{{ user.role || 'CUSTOMER' }}</div>
             </div>
-
           </div>
-
-          <p class="profile-note">
-            To change your account information, contact RALS support.
-          </p>
 
         </section>
 
@@ -208,13 +286,202 @@
               <p class="profile-eyebrow">DELIVERY DETAILS</p>
               <h2>MY ADDRESSES</h2>
             </div>
+            <button
+              *ngIf="editingAddressId === null"
+              type="button"
+              class="profile-edit-button"
+              (click)="startNewAddress()">
+              ADD ADDRESS
+            </button>
           </div>
 
-          <p class="profile-note">
-            Your saved delivery addresses will appear here.
-            Address management will be available once the address API
-            is connected.
+          <p *ngIf="addressError" class="profile-form-error" role="alert">
+            {{ addressError }}
           </p>
+          <p *ngIf="addressSuccess" class="profile-form-success" role="status">
+            {{ addressSuccess }}
+          </p>
+          <p *ngIf="profileLoading" class="profile-loading">
+            Loading your saved addresses...
+          </p>
+
+          <div *ngIf="addresses.length" class="profile-address-list">
+            <article *ngFor="let address of addresses" class="profile-address-card">
+              <div class="profile-address-details">
+                <strong>{{ address.fullName }}</strong>
+                <span>{{ address.phone }}</span>
+                <span>{{ address.line1 }}</span>
+                <span *ngIf="address.line2">{{ address.line2 }}</span>
+                <span>
+                  {{ address.city }}, {{ address.state }} {{ address.postalCode }}
+                </span>
+                <span>{{ address.country }}</span>
+              </div>
+
+              <div class="profile-address-actions">
+                <button
+                  type="button"
+                  class="profile-secondary-button"
+                  [disabled]="editingAddressId !== null || !!deletingAddressId"
+                  (click)="editAddress(address)">
+                  EDIT
+                </button>
+                <button
+                  *ngIf="pendingDeleteAddressId !== address.id"
+                  type="button"
+                  class="profile-remove-button"
+                  [disabled]="editingAddressId !== null || !!deletingAddressId"
+                  (click)="requestAddressDelete(address.id)">
+                  REMOVE
+                </button>
+                <div
+                  *ngIf="pendingDeleteAddressId === address.id"
+                  class="profile-delete-confirm">
+                  <span>Remove this address?</span>
+                  <button
+                    type="button"
+                    class="profile-remove-button"
+                    [disabled]="deletingAddressId === address.id"
+                    (click)="confirmDeleteAddress(address.id)">
+                    {{ deletingAddressId === address.id ? 'REMOVING...' : 'CONFIRM' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="profile-secondary-button"
+                    [disabled]="!!deletingAddressId"
+                    (click)="cancelAddressDelete()">
+                    CANCEL
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div
+            *ngIf="!profileLoading && !addresses.length && editingAddressId === null"
+            class="profile-address-empty">
+            <p>You have no saved delivery addresses yet.</p>
+            <button
+              type="button"
+              class="profile-secondary-button"
+              (click)="startNewAddress()">
+              ADD YOUR FIRST ADDRESS
+            </button>
+          </div>
+
+          <form
+            *ngIf="editingAddressId !== null"
+            #addressEditor="ngForm"
+            class="profile-address-editor"
+            (ngSubmit)="saveAddress()">
+            <h3>{{ editingAddressId === 'new' ? 'ADD DELIVERY ADDRESS' : 'EDIT DELIVERY ADDRESS' }}</h3>
+            <div class="profile-address-form-grid">
+              <div class="profile-field">
+                <label for="address-full-name">FULL NAME</label>
+                <input
+                  id="address-full-name"
+                  name="fullName"
+                  class="profile-input"
+                  [(ngModel)]="addressForm.fullName"
+                  required
+                  maxlength="100"
+                  autocomplete="name">
+              </div>
+              <div class="profile-field">
+                <label for="address-phone">PHONE NUMBER</label>
+                <input
+                  id="address-phone"
+                  name="phone"
+                  class="profile-input"
+                  [(ngModel)]="addressForm.phone"
+                  type="tel"
+                  required
+                  maxlength="20"
+                  autocomplete="tel">
+              </div>
+              <div class="profile-field profile-address-wide">
+                <label for="address-line1">ADDRESS LINE 1</label>
+                <input
+                  id="address-line1"
+                  name="line1"
+                  class="profile-input"
+                  [(ngModel)]="addressForm.line1"
+                  required
+                  maxlength="200"
+                  autocomplete="address-line1">
+              </div>
+              <div class="profile-field profile-address-wide">
+                <label for="address-line2">ADDRESS LINE 2 (OPTIONAL)</label>
+                <input
+                  id="address-line2"
+                  name="line2"
+                  class="profile-input"
+                  [(ngModel)]="addressForm.line2"
+                  maxlength="200"
+                  autocomplete="address-line2">
+              </div>
+              <div class="profile-field">
+                <label for="address-city">CITY</label>
+                <input
+                  id="address-city"
+                  name="city"
+                  class="profile-input"
+                  [(ngModel)]="addressForm.city"
+                  required
+                  maxlength="100"
+                  autocomplete="address-level2">
+              </div>
+              <div class="profile-field">
+                <label for="address-state">STATE</label>
+                <input
+                  id="address-state"
+                  name="state"
+                  class="profile-input"
+                  [(ngModel)]="addressForm.state"
+                  required
+                  maxlength="100"
+                  autocomplete="address-level1">
+              </div>
+              <div class="profile-field">
+                <label for="address-postal-code">PIN CODE</label>
+                <input
+                  id="address-postal-code"
+                  name="postalCode"
+                  class="profile-input"
+                  [(ngModel)]="addressForm.postalCode"
+                  required
+                  maxlength="20"
+                  autocomplete="postal-code">
+              </div>
+              <div class="profile-field">
+                <label for="address-country">COUNTRY</label>
+                <input
+                  id="address-country"
+                  name="country"
+                  class="profile-input"
+                  [(ngModel)]="addressForm.country"
+                  required
+                  maxlength="80"
+                  autocomplete="country-name">
+              </div>
+            </div>
+
+            <div class="profile-form-actions">
+              <button
+                type="button"
+                class="profile-secondary-button"
+                [disabled]="savingAddress"
+                (click)="cancelAddressEdit()">
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                class="profile-save-button"
+                [disabled]="addressEditor.invalid || savingAddress">
+                {{ savingAddress ? 'SAVING...' : 'SAVE ADDRESS' }}
+              </button>
+            </div>
+          </form>
         </section>
 
       </div>

@@ -11,12 +11,4 @@ import { ApiService } from './api.service';
 })
 export class AppComponent {
   api = inject(ApiService);
-  cartCount = this.getCartCount();
-
-  getCartCount(): number {
-    try {
-      const cart = JSON.parse(sessionStorage.getItem('rals_cart') || '[]');
-      return cart.reduce((sum: number, item: any) => sum + Number(item.quantity || 0), 0);
-    } catch { return 0; }
-  }
 }

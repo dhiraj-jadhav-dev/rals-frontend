@@ -1,13 +1,23 @@
 <section class="home-hero">
-  <img class="hero-photo"
-    src="https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=2200&q=88"
-    alt="RALS contemporary menswear collection">
+  <picture class="hero-picture">
+    <source *ngIf="heroBanner.mobileImageUrl" [srcset]="heroBanner.mobileImageUrl" media="(max-width: 700px)">
+    <img class="hero-photo" [src]="heroDesktopImage"
+      [alt]="heroBanner.heading + ' ' + heroBanner.headingAccent">
+  </picture>
   <div class="hero-shade"></div>
+  <p class="hero-load-error" *ngIf="heroError">{{ heroError }}</p>
   <div class="hero-copy">
-    <p class="eyebrow light-eyebrow">NEW COLLECTION / DROP 01</p>
-    <h1>DRESS<br>DIFFERENT.<br><span>FEEL RALS.</span></h1>
-    <p class="hero-subtitle">Contemporary essentials for every mood.</p>
-    <a class="btn btn-lime" href="#collection">SHOP NEW DROP <span>↗</span></a>
+    <p class="eyebrow light-eyebrow" *ngIf="heroBanner.eyebrow">{{ heroBanner.eyebrow }}</p>
+    <h1>{{ heroBanner.heading }}<br><span>{{ heroBanner.headingAccent }}</span></h1>
+    <p class="hero-subtitle" *ngIf="heroBanner.subtitle">{{ heroBanner.subtitle }}</p>
+    <a class="btn btn-lime" *ngIf="heroBanner.buttonText && !heroCtaIsExternal"
+      [routerLink]="heroCtaRouterLink" [fragment]="heroCtaFragment">
+      {{ heroBanner.buttonText }} <span>↗</span>
+    </a>
+    <a class="btn btn-lime" *ngIf="heroBanner.buttonText && heroCtaIsExternal"
+      [href]="heroBanner.buttonLink" target="_blank" rel="noopener noreferrer">
+      {{ heroBanner.buttonText }} <span>↗</span>
+    </a>
   </div>
   <div class="hero-index"><b>01</b><span> / 03</span><i></i><i></i><i></i></div>
   <div class="hero-side-note">RALS STUDIO — EST. 2026</div>
@@ -36,36 +46,34 @@
     <button [class.active]="activeCategory==='bottom'" (click)="chooseCategory('bottom')">BOTTOMWEAR</button>
   </div>
   <p class="error-banner" *ngIf="error">{{error}}</p>
-  <p class="success-banner" *ngIf="added">{{added}}</p>
   <div class="product-grid" *ngIf="filtered.length; else emptyProducts">
-    <article class="product-card" *ngFor="let p of filtered; let i = index">
+    <article class="product-card" *ngFor="let p of filtered"
+      tabindex="0" role="link" [attr.aria-label]="'View ' + p.name"
+      (click)="openProduct(p)" (keydown)="onCardKeydown($event, p)">
       <div class="product-visual">
         <img [src]="image(p)" [alt]="p.name" loading="lazy">
-        <span class="product-label" [class.lime-label]="i % 3 !== 0">{{i % 3 === 0 ? 'BESTSELLER' : 'NEW DROP'}}</span>
-        <button class="store-fav-button" type="button" (click)="toggleFavorite(p)"
-          [class.is-favorite]="api.isFavorite(p.id)" [attr.aria-label]="api.isFavorite(p.id)
-    ? 'Remove from favourites'
-    : 'Add to favourites'">
-
-          {{ api.isFavorite(p.id) ? '♥' : '♡' }}
-
-        </button>
-        <div class="quick-size">
-          <select [(ngModel)]="selected[p.id]" [ngModelOptions]="{standalone:true}" aria-label="Choose size and colour">
-            <option value="">SELECT SIZE / COLOUR</option>
-            <option *ngFor="let v of p.variants" [value]="v.id" [disabled]="v.stock < 1">{{v.size}} · {{v.color}}
-              {{v.stock < 1 ? '(SOLD OUT)' : '' }}</option>
-          </select>
-          <button type="button" (click)="add(p)">ADD TO BAG +</button>
+        <span class="product-label" *ngIf="badge(p) as productBadge"
+          [class.stock-label]="productBadge === 'OUT OF STOCK'"
+          [class.lime-label]="productBadge === 'SALE'">{{productBadge}}</span>
+        <div class="product-gallery-dots" *ngIf="imageCount(p) > 1"
+          role="group" [attr.aria-label]="'Choose image of ' + p.name"
+          (click)="$event.stopPropagation()">
+          <button *ngFor="let image of p.images; let i = index" type="button"
+            [class.active]="selectedImage[p.id] === i"
+            [attr.aria-label]="'Show image ' + (i + 1) + ' of ' + p.name"
+            [attr.aria-pressed]="selectedImage[p.id] === i"
+            (click)="$event.stopPropagation(); selectImage(p, i)"
+            (keydown.enter)="$event.stopPropagation()"></button>
         </div>
       </div>
       <div class="product-meta">
         <div>
           <h3>{{p.name}}</h3>
           <p>{{p.category?.name || 'RALS ESSENTIAL'}}</p>
-        </div><strong>{{p.price / 100 | currency:'INR':'symbol':'1.0-0'}}</strong>
+        </div>
+        <strong>{{p.price / 100 | currency:'INR':'symbol':'1.0-0'}}</strong>
       </div>
-      <div class="product-price" *ngIf="p.compareAt"><del>{{p.compareAt / 100 |
+      <div class="product-price" *ngIf="p.compareAt && p.compareAt > p.price"><del>{{p.compareAt / 100 |
           currency:'INR':'symbol':'1.0-0'}}</del><span>{{((p.compareAt-p.price)/p.compareAt*100) | number:'1.0-0'}}%
           OFF</span></div>
     </article>

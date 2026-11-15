@@ -49,7 +49,9 @@
 
     <div class="favorites-grid">
 
-      <article class="fav-product" *ngFor="let p of products">
+      <article class="fav-product" *ngFor="let p of products"
+        tabindex="0" role="link" [attr.aria-label]="'View ' + p.name"
+        (click)="openProduct(p)" (keydown)="onCardKeydown($event, p)">
 
         <div class="fav-image">
 
@@ -64,40 +66,10 @@
           <button
             class="fav-remove"
             type="button"
-            (click)="remove(p)"
+            (click)="$event.stopPropagation(); remove(p)"
             aria-label="Remove from favourites">
             ♥
           </button>
-
-          <div class="fav-quick-actions">
-
-            <select
-              [(ngModel)]="selected[p.id]"
-              [ngModelOptions]="{standalone:true}"
-              aria-label="Choose size and colour">
-
-              <option value="">SELECT SIZE / COLOUR</option>
-
-              <option
-                *ngFor="let v of p.variants"
-                [value]="v.id"
-                [disabled]="v.stock < 1">
-
-                {{ v.size }} · {{ v.color }}
-                {{ v.stock < 1 ? '(SOLD OUT)' : '' }}
-
-              </option>
-
-            </select>
-
-            <button
-              type="button"
-              (click)="addToBag(p)">
-              ADD TO BAG +
-            </button>
-
-          </div>
-
         </div>
 
         <div class="fav-product-info">
@@ -124,6 +96,11 @@
           </span>
 
         </div>
+
+        <a class="fav-view-product" [routerLink]="['/product', p.slug]"
+          (click)="$event.stopPropagation()">
+          VIEW PRODUCT ↗
+        </a>
 
       </article>
 

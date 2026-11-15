@@ -57,7 +57,7 @@ export class CheckoutComponent implements OnInit {
       this.router.navigateByUrl("/login");
       return;
     }
-    const items = JSON.parse(sessionStorage.getItem("rals_cart") || "[]");
+    const items = this.api.cartSnapshot();
     if (!items.length) {
       this.error = "Your bag is empty.";
       return;
@@ -66,7 +66,7 @@ export class CheckoutComponent implements OnInit {
     this.error = "";
     this.api
       .createOrder({
-        items: items.map((i: any) => ({
+        items: items.map((i) => ({
           variantId: i.variantId,
           quantity: i.quantity,
         })),
@@ -75,7 +75,7 @@ export class CheckoutComponent implements OnInit {
       })
       .subscribe({
         next: (order) => {
-          sessionStorage.removeItem("rals_cart");
+          this.api.clearCart();
           if (this.paymentMethod === "COD") {
             this.busy = false;
             this.message = `Order ${order.orderNumber} placed. Pay cash on delivery.`;

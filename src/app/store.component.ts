@@ -1,8 +1,23 @@
 import { Component, inject, OnInit } from "@angular/core";
 import { CurrencyPipe, DecimalPipe, NgFor, NgIf } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { ApiService, Product } from "./api.service";
+import { ApiService, HeroBanner, Product } from "./api.service";
 import { Router, RouterLink } from "@angular/router";
+
+const DEFAULT_HERO_BANNER: HeroBanner = {
+  id: "home",
+  desktopImageUrl: null,
+  desktopImagePublicId: null,
+  mobileImageUrl: null,
+  mobileImagePublicId: null,
+  eyebrow: "NEW COLLECTION / DROP 01",
+  heading: "DRESS DIFFERENT.",
+  headingAccent: "FEEL RALS.",
+  subtitle: "Contemporary essentials for every mood.",
+  buttonText: "SHOP NEW DROP",
+  buttonLink: "#collection",
+  active: true,
+};
 
 @Component({
   selector: "app-store",
@@ -16,14 +31,10 @@ export class StoreComponent implements OnInit {
 
   products: Product[] = [];
   filtered: Product[] = [];
+  heroBanner = DEFAULT_HERO_BANNER;
+  heroError = "";
 
-  cart: {
-    variantId: string;
-    quantity: number;
-    name: string;
-  }[] = [];
-
-  selected: Record<string, string> = {};
+  selectedImage: Record<string, number> = {};
 
   search = "";
   activeCategory = "ALL";
@@ -36,8 +47,43 @@ export class StoreComponent implements OnInit {
     "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=700&q=85";
 
   ngOnInit(): void {
-    this.loadCart();
+    this.loadHeroBanner();
     this.loadProducts();
+  }
+
+  loadHeroBanner(): void {
+    this.api.getHeroBanner().subscribe({
+      next: (banner) => {
+        this.heroBanner = banner ?? DEFAULT_HERO_BANNER;
+        this.heroError = "";
+      },
+      error: () => {
+        this.heroError = "Hero banner settings are temporarily unavailable.";
+      },
+    });
+  }
+
+  get heroDesktopImage(): string {
+    return (
+      this.heroBanner.desktopImageUrl ||
+      "https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=2200&q=88"
+    );
+  }
+
+  get heroCtaIsExternal(): boolean {
+    return /^https:\/\//i.test(this.heroBanner.buttonLink);
+  }
+
+  get heroCtaRouterLink(): string[] {
+    return this.heroBanner.buttonLink.startsWith("#")
+      ? []
+      : [this.heroBanner.buttonLink];
+  }
+
+  get heroCtaFragment(): string | undefined {
+    return this.heroBanner.buttonLink.startsWith("#")
+      ? this.heroBanner.buttonLink.slice(1)
+      : undefined;
   }
 
   loadProducts(): void {
@@ -45,9 +91,7 @@ export class StoreComponent implements OnInit {
       next: (products) => {
         this.products = products || [];
         for (const product of this.products) {
-          if (this.selected[product.id] === undefined) {
-            this.selected[product.id] = "";
-          }
+          this.selectedImage[product.id] ??= 0;
         }
         this.error = "";
         this.applyFilters();
@@ -57,19 +101,6 @@ export class StoreComponent implements OnInit {
           "Could not load products. Please check that the API is running.";
       },
     });
-  }
-
-  loadCart(): void {
-    try {
-      const saved = sessionStorage.getItem("rals_cart");
-      this.cart = saved ? JSON.parse(saved) : [];
-    } catch {
-      this.cart = [];
-    }
-  }
-
-  saveCart(): void {
-    sessionStorage.setItem("rals_cart", JSON.stringify(this.cart));
   }
 
   applyFilters(): void {
@@ -117,54 +148,18 @@ export class StoreComponent implements OnInit {
       ?.scrollIntoView({ behavior: "smooth" });
   }
 
-  add(p: Product): void {
-    if (!this.api.requireLogin(this.router.url)) return;
-
-    const variantId = this.selected[p.id];
-
-    if (!variantId) {
-      this.added = "Choose a size and colour first.";
-      return;
-    }
-
-    const variant = p.variants?.find((v) => v.id === variantId);
-
-    if (!variant || variant.stock < 1) {
-      this.added = "This option is currently out of stock.";
-      return;
-    }
-
-    const item = this.cart.find((x) => x.variantId === variantId);
-
-    if (item) {
-      if (item.quantity >= variant.stock) {
-        this.added = "Maximum available stock reached.";
-        return;
-      }
-      item.quantity++;
-    } else {
-      this.cart.push({
-        variantId,
-        quantity: 1,
-        name: p.name,
-      });
-    }
-
-    this.saveCart();
-    this.added = `${p.name} added to your bag.`;
-  }
-
   get cartCount(): number {
-    return this.cart.reduce((sum, item) => sum + item.quantity, 0);
+    return this.api.cartSnapshot().reduce((sum, item) => sum + item.quantity, 0);
   }
 
   checkout(): void {
-    this.saveCart();
-    this.router.navigateByUrl("/checkout");
+    this.router.navigateByUrl("/cart");
   }
 
   image(p: Product): string {
-    const url = p.images?.[0]?.url;
+    const images = p.images ?? [];
+    const selectedIndex = this.selectedImage[p.id] ?? 0;
+    const url = images[selectedIndex]?.url || images[0]?.url;
 
     if (url && !url.includes("placehold.co")) {
       return url;
@@ -173,9 +168,36 @@ export class StoreComponent implements OnInit {
     return this.fallback;
   }
 
-  toggleFavorite(p: Product) {
-    if (!this.api.requireLogin(this.router.url)) return;
+  imageCount(p: Product): number {
+    return p.images?.length ?? 0;
+  }
 
-    this.api.toggleFavorite(p);
+  selectImage(product: Product, index: number): void {
+    const imageCount = this.imageCount(product);
+    if (index < 0 || index >= imageCount) return;
+    this.selectedImage[product.id] = index;
+  }
+
+  openProduct(product: Product): void {
+    void this.router.navigate(["/product", product.slug]);
+  }
+
+  onCardKeydown(event: KeyboardEvent, product: Product): void {
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    this.openProduct(product);
+  }
+
+  badge(product: Product): string {
+    if (!product.variants?.some((variant) => variant.stock > 0)) {
+      return "OUT OF STOCK";
+    }
+    if (product.compareAt && product.compareAt > product.price) return "SALE";
+    if (product.createdAt) {
+      const age = Date.now() - new Date(product.createdAt).getTime();
+      if (age >= 0 && age < 30 * 24 * 60 * 60 * 1000) return "NEW";
+    }
+    return "";
   }
 }

@@ -33,8 +33,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Configure backend URL
+        env:
+          RALS_API_BASE_URL: ${{ vars.RALS_API_BASE_URL }}
+        run: |
+          mkdir -p src/assets
+          node -e 'const fs = require("node:fs"); fs.writeFileSync("src/assets/runtime-config.js", `window.RALS_API_BASE_URL = ${JSON.stringify(process.env.RALS_API_BASE_URL || "")};\n`);'
+
       - name: Build Angular
         run: npx ng build --configuration production --base-href /rals-frontend/
+
+      - name: Add GitHub Pages route fallback
+        run: cp dist/rals-store/browser/index.html dist/rals-store/browser/404.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

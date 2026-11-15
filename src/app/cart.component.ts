@@ -1,121 +1,112 @@
+import { Component, inject, OnInit } from "@angular/core";
+import { CurrencyPipe, NgFor, NgIf } from "@angular/common";
+import { Router } from "@angular/router";
+import {
+  ApiService,
+  CartEntry,
+  MAX_CART_ITEM_QUANTITY,
+  Product,
+} from "./api.service";
 
-import { Component, inject, OnInit } from '@angular/core';
-import { CurrencyPipe, NgFor, NgIf } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
-import { ApiService, Product } from './api.service';
-
-interface CartItem {
-  variantId: string;
-  quantity: number;
-  name: string;
-}
-
-interface CartDisplayItem extends CartItem {
-  product: Product;
+interface CartDisplayItem extends CartEntry {
+  product?: Product;
   size: string;
   color: string;
   stock: number;
+  unitPrice: number;
+  unavailable: boolean;
 }
 
 @Component({
-  selector: 'app-cart',
+  selector: "app-cart",
   standalone: true,
-  imports: [CurrencyPipe, NgFor, NgIf, RouterLink],
-  templateUrl: './cart.component.html'
+  imports: [CurrencyPipe, NgFor, NgIf],
+  templateUrl: "./cart.component.html",
 })
 export class CartComponent implements OnInit {
   api = inject(ApiService);
   router = inject(Router);
 
-  items: CartItem[] = [];
   cartItems: CartDisplayItem[] = [];
-
   loading = true;
-  error = '';
+  error = "";
+  stockWarning = "";
 
   shippingThreshold = 99900;
   shippingCharge = 0;
+  maxCartItemQuantity = MAX_CART_ITEM_QUANTITY;
 
   ngOnInit(): void {
     this.loadCart();
   }
 
   loadCart(): void {
-    try {
-      this.items = JSON.parse(
-        sessionStorage.getItem('rals_cart') || '[]'
-      );
-    } catch {
-      this.items = [];
-    }
-
-    if (!this.items.length) {
+    const items = this.api.cartSnapshot();
+    if (!items.length) {
       this.cartItems = [];
       this.loading = false;
       return;
     }
 
+    this.loading = true;
     this.api.products().subscribe({
       next: (products) => {
-        this.cartItems = this.items
-          .map(item => {
-            const product = products.find(p =>
-              p.variants?.some(v => v.id === item.variantId)
-            );
-
-            if (!product) return null;
-
-            const variant = product.variants.find(
-              v => v.id === item.variantId
-            );
-
-            if (!variant) return null;
-
-            return {
-              ...item,
-              product,
-              size: variant.size,
-              color: variant.color,
-              stock: variant.stock
-            };
-          })
-          .filter((item): item is CartDisplayItem => item !== null);
-
-        this.items = this.cartItems.map(item => ({
-          variantId: item.variantId,
-          quantity: item.quantity,
-          name: item.product.name
-        }));
-
-        this.saveCart();
+        this.hydrateCart(items, products);
         this.loading = false;
-        this.error = '';
+        this.error = "";
       },
       error: () => {
-        this.error = 'Unable to load your cart. Please try again.';
+        this.error = "Unable to load your cart. Please try again.";
         this.loading = false;
-      }
+      },
     });
+  }
+
+  private hydrateCart(items: CartEntry[], products: Product[]): void {
+    this.cartItems = items.map((item) => {
+      const product =
+        products.find((candidate) =>
+          candidate.variants?.some((variant) => variant.id === item.variantId),
+        ) || products.find((candidate) => candidate.slug === item.productSlug);
+      const variant = product?.variants?.find(
+        (candidate) => candidate.id === item.variantId,
+      );
+      const stock = variant?.stock ?? 0;
+
+      return {
+        ...item,
+        name: product?.name || item.name,
+        product,
+        size: variant?.size || item.size || "Unavailable",
+        color: variant?.color || item.color || "Unavailable",
+        stock,
+        unitPrice: product?.price || 0,
+        unavailable:
+          !variant ||
+          stock < 1 ||
+          item.quantity > stock ||
+          item.quantity > MAX_CART_ITEM_QUANTITY,
+      };
+    });
+    this.syncCart();
+    this.stockWarning = this.hasUnavailableStock
+      ? "Some items are unavailable, exceed stock, or exceed the per-size order limit. Update or remove them to continue."
+      : "";
   }
 
   get subtotal(): number {
     return this.cartItems.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
-      0
+      (sum, item) => sum + item.unitPrice * item.quantity,
+      0,
     );
   }
 
   get totalQuantity(): number {
-    return this.cartItems.reduce(
-      (sum, item) => sum + item.quantity,
-      0
-    );
+    return this.cartItems.reduce((sum, item) => sum + item.quantity, 0);
   }
 
   get shipping(): number {
-    return this.subtotal >= this.shippingThreshold
-      ? 0
-      : this.shippingCharge;
+    return this.subtotal >= this.shippingThreshold ? 0 : this.shippingCharge;
   }
 
   get total(): number {
@@ -127,72 +118,102 @@ export class CartComponent implements OnInit {
   }
 
   get hasUnavailableStock(): boolean {
-    return this.cartItems.some(item =>
-      item.quantity > item.stock || item.stock < 1
-    );
+    return this.cartItems.some((item) => item.unavailable);
   }
 
   updateQuantity(item: CartDisplayItem, change: number): void {
     if (!this.api.requireLogin(this.router.url)) return;
-
     const newQuantity = item.quantity + change;
-
     if (newQuantity < 1) return;
-
-    if (newQuantity > item.stock) {
-      alert('Maximum available stock reached.');
+    if (
+      change > 0 &&
+      (item.unavailable ||
+        newQuantity > item.stock ||
+        newQuantity > MAX_CART_ITEM_QUANTITY)
+    ) {
+      alert(
+        `Maximum available quantity is ${Math.min(item.stock, MAX_CART_ITEM_QUANTITY)}.`,
+      );
       return;
     }
 
     item.quantity = newQuantity;
+    item.unavailable =
+      item.stock < 1 ||
+      item.quantity > item.stock ||
+      item.quantity > MAX_CART_ITEM_QUANTITY;
     this.syncCart();
+    this.stockWarning = this.hasUnavailableStock
+      ? "Some items are unavailable, exceed stock, or exceed the per-size order limit. Update or remove them to continue."
+      : "";
   }
 
   removeItem(variantId: string): void {
     if (!this.api.requireLogin(this.router.url)) return;
-
     this.cartItems = this.cartItems.filter(
-      item => item.variantId !== variantId
+      (item) => item.variantId !== variantId,
     );
-
     this.syncCart();
+    this.stockWarning = this.hasUnavailableStock
+      ? "Some items are unavailable, exceed stock, or exceed the per-size order limit. Update or remove them to continue."
+      : "";
   }
 
-  saveCart(): void {
-    sessionStorage.setItem(
-      'rals_cart',
-      JSON.stringify(this.items)
-    );
-  }
-
-  syncCart(): void {
-    this.items = this.cartItems.map(item => ({
+  private syncCart(): void {
+    const items = this.cartItems.map((item) => ({
       variantId: item.variantId,
       quantity: item.quantity,
-      name: item.product.name
+      name: item.product?.name || item.name,
+      size: item.size,
+      color: item.color,
+      productSlug: item.product?.slug || item.productSlug,
     }));
-
-    this.saveCart();
+    this.api.setCartItems(items);
   }
 
-  image(product: Product): string {
-    return product.images?.[0]?.url ||
-      'https://placehold.co/700x900/e9e9e5/202020?text=RALS';
+  image(item: CartDisplayItem): string {
+    return (
+      item.product?.images?.[0]?.url ||
+      "https://placehold.co/700x900/e9e9e5/202020?text=RALS"
+    );
+  }
+
+  stockStatus(item: CartDisplayItem): string {
+    if (item.stock < 1) return "OUT OF STOCK";
+    if (item.quantity > item.stock) {
+      return `ONLY ${item.stock} AVAILABLE — QUANTITY EXCEEDS STOCK`;
+    }
+    if (item.quantity > MAX_CART_ITEM_QUANTITY) {
+      return `MAXIMUM ${MAX_CART_ITEM_QUANTITY} PER SIZE PER ORDER`;
+    }
+    return "STOCK UNAVAILABLE";
   }
 
   checkout(): void {
-    if (!this.cartItems.length) return;
+    if (!this.cartItems.length || !this.api.requireLogin(this.router.url)) return;
 
-    if (this.hasUnavailableStock) {
-      alert('Please review the available stock before checkout.');
-      return;
-    }
-
-    this.syncCart();
-    this.router.navigateByUrl('/checkout');
+    this.loading = true;
+    this.error = "";
+    this.api.products().subscribe({
+      next: (products) => {
+        const currentItems = this.api.cartSnapshot();
+        this.hydrateCart(currentItems, products);
+        this.loading = false;
+        if (this.hasUnavailableStock) {
+          this.stockWarning =
+            "Stock changed. Please correct your bag before checkout.";
+          return;
+        }
+        this.router.navigateByUrl("/checkout");
+      },
+      error: () => {
+        this.loading = false;
+        this.error = "Unable to verify current stock. Please try again.";
+      },
+    });
   }
 
   continueShopping(): void {
-    this.router.navigateByUrl('/');
+    this.router.navigateByUrl("/");
   }
 }

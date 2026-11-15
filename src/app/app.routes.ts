@@ -7,8 +7,10 @@ import { AdminComponent } from './admin.component';
 import { ProfileComponent } from './profile.component';
 import { FavoritesComponent } from './favorites.component';
 import { CartComponent } from './cart.component';
+import { ProductDetailsComponent } from './product-details.component';
 export const routes: Routes = [
   { path: '', component: StoreComponent },
+  { path: 'product/:slug', component: ProductDetailsComponent },
   { path: 'login', component: LoginComponent },
   { path: 'checkout', component: CheckoutComponent },
   { path: 'orders', component: OrdersComponent },

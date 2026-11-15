@@ -39,7 +39,7 @@
         <path d="M4 8H20L19 21H5L4 8Z" stroke="currentColor" stroke-width="1.7" />
         <path d="M9 9V6A3 3 0 0 1 15 6V9" stroke="currentColor" stroke-width="1.7" />
       </svg>
-      <span class="bag-dot"></span>
+      <span class="bag-dot">{{ (api.cartCount$ | async) ?? 0 }}</span>
     </a>
 
     <!-- Profile -->
@@ -55,7 +55,7 @@
     }
 
     <a routerLink="/profile" class="profile-avatar" title="My Profile">
-      {{ user.name?.charAt(0)?.toUpperCase() || 'U' }}
+      {{ user.name.charAt(0).toUpperCase() || 'U' }}
     </a>
 
     <button class="logout-button" (click)="api.logout()">

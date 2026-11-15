@@ -24,6 +24,9 @@
     {{ error }}
     <button (click)="loadCart()">TRY AGAIN</button>
   </div>
+  <div class="cart-message cart-stock-warning" *ngIf="stockWarning">
+    {{ stockWarning }}
+  </div>
 
   <!-- Empty Cart -->
   <div class="cart-empty" *ngIf="!loading && !error && cartItems.length === 0">
@@ -59,7 +62,7 @@
       <article class="cart-product" *ngFor="let item of cartItems">
 
         <div class="cart-product-image">
-          <img [src]="image(item.product)" [alt]="item.product.name">
+          <img [src]="image(item)" [alt]="item.product?.name || item.name">
         </div>
 
         <div class="cart-product-details">
@@ -67,10 +70,10 @@
           <div class="cart-product-title">
             <div>
               <p class="cart-product-category">
-                {{ item.product.category?.name || 'RALS ESSENTIAL' }}
+                {{ item.product?.category?.name || 'RALS ESSENTIAL' }}
               </p>
 
-              <h3>{{ item.product.name }}</h3>
+              <h3>{{ item.product?.name || item.name }}</h3>
             </div>
 
             <button class="cart-remove-mobile" (click)="removeItem(item.variantId)" aria-label="Remove product">
@@ -83,12 +86,12 @@
             COLOUR: {{ item.color }}
           </p>
 
-          <p class="cart-stock" *ngIf="item.stock > 0">
+          <p class="cart-stock" *ngIf="item.stock > 0 && !item.unavailable">
             {{ item.stock }} AVAILABLE
           </p>
 
-          <p class="cart-out-stock" *ngIf="item.stock < 1">
-            OUT OF STOCK
+          <p class="cart-out-stock" *ngIf="item.unavailable">
+            {{ stockStatus(item) }}
           </p>
 
           <div class="cart-quantity">
@@ -99,7 +102,9 @@
 
             <span>{{ item.quantity }}</span>
 
-            <button (click)="updateQuantity(item, 1)" [disabled]="item.quantity >= item.stock">
+            <button (click)="updateQuantity(item, 1)"
+              [disabled]="item.unavailable || item.quantity >= item.stock
+                || item.quantity >= maxCartItemQuantity">
               +
             </button>
 
@@ -113,12 +118,12 @@
 
         <div class="cart-product-price">
           <strong>
-            {{ (item.product.price * item.quantity) / 100
+            {{ (item.unitPrice * item.quantity) / 100
             | currency:'INR':'symbol':'1.0-0' }}
           </strong>
 
-          <small *ngIf="item.quantity > 1">
-            {{ item.product.price / 100
+          <small class="cart-price-unit">
+            {{ item.unitPrice / 100
             | currency:'INR':'symbol':'1.0-0' }} / item
           </small>
         </div>
@@ -181,7 +186,7 @@
       </p>
 
       <button class="cart-primary-btn cart-checkout-btn" (click)="checkout()"
-        [disabled]="hasUnavailableStock">
+        [disabled]="hasUnavailableStock || loading">
         PROCEED TO CHECKOUT ↗
       </button>
 

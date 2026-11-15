@@ -3,6 +3,7 @@
     <a routerLink="/" class="admin-logo">RALS<span>®</span></a>
     <p>STORE CONTROL</p>
     <a class="selected" href="#overview">▦ &nbsp; Overview</a>
+    <a href="#hero-banner">✦ &nbsp; Hero Banner</a>
     <a href="#catalogue">▣ &nbsp; Products</a>
     <a href="#orders">▤ &nbsp; Orders</a>
     <a routerLink="/">↗ &nbsp; View store</a>
@@ -13,26 +14,165 @@
       <span class="admin-live">● STORE PANEL</span>
     </header>
     <p class="admin-intro">Manage your products and keep orders moving.</p>
+    <p class="success-banner" *ngIf="message">{{ message }}</p>
+    <p class="error-banner" *ngIf="error">{{ error }}</p>
     <div class="admin-stats">
       <div><small>STORE STATUS</small><b>ACTIVE</b><span>● Ready for orders</span></div>
       <div><small>ORDERS LOADED</small><b>{{ orders.length }}</b><span>From your API</span></div>
       <div><small>PRODUCTS</small><b>{{ products.length }}</b><span>In your catalogue</span></div>
     </div>
-    <p class="success-banner" *ngIf="message">{{ message }}</p>
-    <p class="error-banner" *ngIf="error">{{ error }}</p>
+    <section class="admin-panel hero-banner-management" id="hero-banner">
+      <div class="panel-heading">
+        <div><p class="eyebrow">STOREFRONT</p><h2>HERO BANNER MANAGEMENT</h2></div>
+        <span>✦</span>
+      </div>
+      <div class="hero-banner-layout">
+        <form class="hero-banner-form" (ngSubmit)="saveHeroBanner()">
+          <label>EYEBROW
+            <input name="heroEyebrow" [(ngModel)]="heroBanner.eyebrow" maxlength="100">
+          </label>
+          <label>HEADING
+            <input name="heroHeading" [(ngModel)]="heroBanner.heading" maxlength="200">
+          </label>
+          <label>HEADING ACCENT
+            <input name="heroHeadingAccent" [(ngModel)]="heroBanner.headingAccent" maxlength="120">
+          </label>
+          <label>SUBTITLE / DESCRIPTION
+            <textarea name="heroSubtitle" [(ngModel)]="heroBanner.subtitle" maxlength="300"></textarea>
+          </label>
+          <div class="hero-banner-fields">
+            <label>CTA BUTTON TEXT
+              <input name="heroButtonText" [(ngModel)]="heroBanner.buttonText" maxlength="80">
+            </label>
+            <label>CTA BUTTON LINK
+              <input name="heroButtonLink" [(ngModel)]="heroBanner.buttonLink" maxlength="500"
+                placeholder="#collection or /cart">
+            </label>
+          </div>
+          <label class="hero-active-toggle">
+            <input name="heroActive" type="checkbox" [(ngModel)]="heroBanner.active">
+            <span>Enable and publish this banner on the home page</span>
+          </label>
+          <div class="hero-image-inputs">
+            <label>DESKTOP IMAGE (JPG, PNG, WEBP · MAX 5 MB)
+              <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp"
+                (change)="onHeroImageSelected($event, 'desktop')">
+            </label>
+            <button type="button" class="delete-button" [disabled]="heroSaving"
+              (click)="removeHeroImage('desktop')">REMOVE DESKTOP IMAGE</button>
+            <label>MOBILE IMAGE (JPG, PNG, WEBP · MAX 5 MB)
+              <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp"
+                (change)="onHeroImageSelected($event, 'mobile')">
+            </label>
+            <button type="button" class="delete-button" [disabled]="heroSaving"
+              (click)="removeHeroImage('mobile')">REMOVE MOBILE IMAGE</button>
+          </div>
+          <p class="muted" *ngIf="desktopHeroFile || mobileHeroFile">
+            Selected images will upload securely to Cloudinary when saved.
+          </p>
+          <div class="form-actions">
+            <button class="btn btn-lime full-width" type="submit" [disabled]="heroSaving">
+              {{ heroSaving ? 'SAVING…' : heroBannerExists ? 'SAVE & PUBLISH ↗' : 'CREATE & PUBLISH ↗' }}
+            </button>
+            <button class="delete-button" type="button" *ngIf="heroBannerExists"
+              [disabled]="heroSaving" (click)="deleteHeroBanner()">
+              DELETE BANNER
+            </button>
+          </div>
+        </form>
+
+        <div class="hero-banner-previews">
+          <div>
+            <p class="eyebrow">DESKTOP PREVIEW</p>
+            <div class="hero-admin-preview hero-admin-preview-desktop">
+              <img [src]="heroImagePreview('desktop')" alt="Desktop hero preview">
+              <div class="hero-admin-preview-shade"></div>
+              <div class="hero-admin-preview-copy">
+                <small *ngIf="heroBanner.eyebrow">{{ heroBanner.eyebrow }}</small>
+                <strong>{{ heroBanner.heading }}<span>{{ heroBanner.headingAccent }}</span></strong>
+                <p *ngIf="heroBanner.subtitle">{{ heroBanner.subtitle }}</p>
+                <em *ngIf="heroBanner.buttonText">{{ heroBanner.buttonText }} ↗</em>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="eyebrow">MOBILE PREVIEW</p>
+            <div class="hero-admin-preview hero-admin-preview-mobile">
+              <img [src]="heroImagePreview('mobile')" alt="Mobile hero preview">
+              <div class="hero-admin-preview-shade"></div>
+              <div class="hero-admin-preview-copy">
+                <small *ngIf="heroBanner.eyebrow">{{ heroBanner.eyebrow }}</small>
+                <strong>{{ heroBanner.heading }}<span>{{ heroBanner.headingAccent }}</span></strong>
+                <p *ngIf="heroBanner.subtitle">{{ heroBanner.subtitle }}</p>
+                <em *ngIf="heroBanner.buttonText">{{ heroBanner.buttonText }} ↗</em>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <div class="admin-grid">
       <section class="admin-panel" id="catalogue">
-        <div class="panel-heading"><div><p class="eyebrow">CATALOGUE</p><h2>ADD A PRODUCT</h2></div><span>＋</span></div>
+        <div class="panel-heading"><div><p class="eyebrow">CATALOGUE</p><h2>{{ editingProductId ? 'EDIT PRODUCT' : 'ADD A PRODUCT' }}</h2></div><span>＋</span></div>
         <form (ngSubmit)="addProduct()">
           <label>PRODUCT NAME<input name="name" [(ngModel)]="product.name" placeholder="Relaxed Fit Shirt" required></label>
           <label>URL SLUG<input name="slug" [(ngModel)]="product.slug" placeholder="relaxed-fit-shirt" required></label>
           <label>CATEGORY<input name="category" [(ngModel)]="product.category" placeholder="T-shirts"></label>
           <label>DESCRIPTION<textarea name="description" [(ngModel)]="product.description" placeholder="Describe the fit, fabric and feel"></textarea></label>
           <label>PRICE (INR)<input name="price" type="number" min="1" [(ngModel)]="product.price" placeholder="1299" required></label>
-          <label>PRODUCT IMAGE<input type="file" accept="image/jpeg,image/png,image/webp" (change)="onImageSelected($event)"></label>
-          <div class="image-preview" *ngIf="imagePreview"><img [src]="imagePreview" alt="Product preview"><span>{{ uploading ? 'Uploading…' : 'Image selected' }}</span></div>
-          <button class="btn btn-lime full-width" type="submit" [disabled]="saving || uploading">{{ saving ? 'CREATING…' : uploading ? 'UPLOADING…' : 'CREATE PRODUCT ↗' }}</button>
+          <label>PRODUCT IMAGES (JPG, PNG, WEBP · MAX 5 MB EACH)<input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" multiple (change)="onImagesSelected($event)"></label>
+          <div class="image-gallery" *ngIf="editingImages.length">
+            <div class="image-preview" *ngFor="let image of editingImages">
+              <img [src]="image.url" [alt]="image.alt || product.name">
+              <button class="delete-button" type="button" [disabled]="deletingImageId === image.id" (click)="removeExistingImage(image)">
+                {{ deletingImageId === image.id ? 'DELETING…' : 'REMOVE' }}
+              </button>
+            </div>
+          </div>
+          <div class="image-gallery" *ngIf="pendingImages.length">
+            <div class="image-preview" *ngFor="let image of pendingImages; let i = index">
+              <img [src]="image.preview" [alt]="image.file.name">
+              <button class="delete-button" type="button" (click)="removePendingImage(i)">REMOVE</button>
+            </div>
+          </div>
+          <p class="muted" *ngIf="uploading">Uploading selected images to Cloudinary…</p>
+          <div class="variant-editor" *ngIf="editingProduct as currentProduct; else newVariantEditor">
+            <div class="inventory-heading">
+              <b>SIZE-WISE STOCK</b>
+              <a href="#inventory">MANAGE VARIANTS ↓</a>
+            </div>
+            <p class="muted" *ngIf="!currentProduct.variants.length">No sizes have been added to this product.</p>
+            <div class="variant-input-row" *ngFor="let variant of currentProduct.variants">
+              <input [value]="variant.size" readonly [attr.aria-label]="'Size ' + variant.size">
+              <input [value]="variant.color" readonly [attr.aria-label]="'Color ' + variant.color">
+              <input type="number" min="0" step="1" [name]="'edit-stock-' + variant.id"
+                [(ngModel)]="inventoryStock[variant.id]" [attr.aria-label]="'Stock for ' + variant.size + ' ' + variant.color">
+              <span class="stock-status" [class.out-of-stock]="inventoryStock[variant.id] === 0">
+                {{ inventoryStock[variant.id] > 0 ? 'IN STOCK' : 'OUT OF STOCK' }}
+              </span>
+            </div>
+            <button class="btn btn-dark" type="button" *ngIf="currentProduct.variants.length"
+              [disabled]="inventorySavingProductId === currentProduct.id"
+              (click)="saveInventory(currentProduct)">
+              {{ inventorySavingProductId === currentProduct.id ? 'SAVING…' : 'SAVE QUANTITIES' }}
+            </button>
+          </div>
+          <ng-template #newVariantEditor>
+            <div class="variant-editor">
+              <div class="inventory-heading"><b>SIZE-WISE STOCK</b><button class="refresh-button" type="button" (click)="addNewProductVariant()">＋ ADD SIZE</button></div>
+              <div class="variant-input-row" *ngFor="let variant of newProductVariants; let i = index">
+                <input [name]="'new-size-' + i" [(ngModel)]="variant.size" placeholder="Size (e.g. M)" aria-label="Size">
+                <input [name]="'new-color-' + i" [(ngModel)]="variant.color" placeholder="Color" aria-label="Color">
+                <input [name]="'new-stock-' + i" type="number" min="0" step="1" [(ngModel)]="variant.stock" placeholder="Stock" aria-label="Stock">
+                <button class="delete-button" type="button" [disabled]="newProductVariants.length === 1" (click)="removeNewProductVariant(i)">REMOVE</button>
+              </div>
+            </div>
+          </ng-template>
+          <div class="form-actions">
+            <button class="btn btn-lime full-width" type="submit" [disabled]="saving">{{ saving ? (uploading ? 'UPLOADING…' : 'SAVING…') : editingProductId ? 'SAVE PRODUCT ↗' : 'CREATE PRODUCT ↗' }}</button>
+            <button class="refresh-button" type="button" *ngIf="editingProductId" (click)="cancelEdit()">CANCEL EDIT</button>
+          </div>
         </form>
       </section>
 
@@ -58,11 +198,39 @@
       <p class="muted" *ngIf="loadingProducts">Loading products…</p>
       <p class="muted" *ngIf="!loadingProducts && !products.length">No products found.</p>
       <article class="product-row" *ngFor="let p of products; trackBy: trackById">
-        <img *ngIf="p.images?.[0]?.url" [src]="p.images[0].url" [alt]="p.name">
-        <div class="product-placeholder" *ngIf="!p.images?.[0]?.url">R</div>
-        <div class="product-info"><b>{{ p.name }}</b><small>{{ p.slug }} · {{ p.category || 'Uncategorised' }}</small></div>
+        <div class="admin-product-images" *ngIf="p.images.length; else noProductImage">
+          <img *ngFor="let image of p.images" [src]="image.url" [alt]="image.alt || p.name">
+        </div>
+        <ng-template #noProductImage><div class="product-placeholder">R</div></ng-template>
+        <div class="product-info"><b>{{ p.name }}</b><small>{{ p.slug }} · {{ p.category?.name || 'Uncategorised' }}</small></div>
         <strong>{{ p.price / 100 | currency:'INR' }}</strong>
+        <button class="refresh-button" type="button" (click)="startEdit(p)">EDIT</button>
         <button class="delete-button" type="button" [disabled]="deletingProductId !== null" (click)="deleteProduct(p)">{{ deletingProductId === p.id ? 'DELETING…' : 'DELETE' }}</button>
+      </article>
+    </section>
+
+    <section class="admin-panel product-list" id="inventory">
+      <div class="panel-heading"><div><p class="eyebrow">STOCK CONTROL</p><h2>PRODUCT INVENTORY</h2></div><button class="refresh-button" type="button" (click)="loadProducts()">↻ REFRESH</button></div>
+      <p class="muted" *ngIf="loadingProducts">Loading inventory…</p>
+      <article class="inventory-product" *ngFor="let p of products; trackBy: trackById">
+        <div class="inventory-product-heading"><div><b>{{ p.name }}</b><small>{{ p.variants.length }} variant(s)</small></div></div>
+        <div class="inventory-table" *ngIf="p.variants.length">
+          <div class="inventory-row inventory-table-head"><span>SIZE</span><span>COLOR</span><span>SKU</span><span>STOCK</span><span>STATUS</span><span>ACTION</span></div>
+          <div class="inventory-row" *ngFor="let variant of p.variants; trackBy: trackById">
+            <b>{{ variant.size }}</b><span>{{ variant.color }}</span><code>{{ variant.sku }}</code>
+            <input type="number" min="0" step="1" [name]="'stock-' + variant.id" [(ngModel)]="inventoryStock[variant.id]" [attr.aria-label]="'Stock for ' + variant.size + ' ' + variant.color">
+            <span class="stock-status" [class.out-of-stock]="inventoryStock[variant.id] === 0">{{ inventoryStock[variant.id] > 0 ? 'IN STOCK' : 'OUT OF STOCK' }}</span>
+            <button class="delete-button" type="button" (click)="removeVariant(variant)">REMOVE</button>
+          </div>
+        </div>
+        <p class="muted" *ngIf="!p.variants.length">No sizes have been added to this product.</p>
+        <div class="inventory-add-row">
+          <input [name]="'add-size-' + p.id" [(ngModel)]="newVariants[p.id].size" placeholder="Size" aria-label="New variant size">
+          <input [name]="'add-color-' + p.id" [(ngModel)]="newVariants[p.id].color" placeholder="Color" aria-label="New variant color">
+          <input [name]="'add-stock-' + p.id" type="number" min="0" step="1" [(ngModel)]="newVariants[p.id].stock" placeholder="Stock" aria-label="New variant stock">
+          <button class="refresh-button" type="button" [disabled]="addingVariantProductId === p.id" (click)="addInventoryVariant(p)">{{ addingVariantProductId === p.id ? 'ADDING…' : '＋ ADD VARIANT' }}</button>
+          <button class="btn btn-dark" type="button" [disabled]="inventorySavingProductId === p.id" (click)="saveInventory(p)">{{ inventorySavingProductId === p.id ? 'SAVING…' : 'SAVE STOCK' }}</button>
+        </div>
       </article>
     </section>
   </main>
