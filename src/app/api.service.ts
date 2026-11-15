@@ -142,9 +142,7 @@ export class ApiService {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  private base =
-    (typeof window !== "undefined" && window.RALS_API_BASE_URL?.trim()) ||
-    "http://localhost:3000/api";
+  private base = "https://rals-backend.onrender.com/api";
 
   private favoritesKey = "rals_favorites";
 
