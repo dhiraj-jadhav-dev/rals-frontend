@@ -12,9 +12,16 @@
 
   <div class="product-detail-grid" *ngIf="!loading && product as p">
     <section class="product-detail-gallery" aria-label="Product images">
-      <div class="product-detail-main-image">
-        <img [src]="mainImage" [alt]="mainImageAlt"
-          [class.changing]="isImageTransitioning">
+      <div class="product-detail-main-image"
+        (touchstart)="startImageSwipe($event)"
+        (touchend)="endImageSwipe($event)"
+        (touchcancel)="cancelImageSwipe()">
+        <button type="button" class="product-detail-image-trigger"
+          [attr.aria-label]="'View larger image of ' + p.name"
+          (click)="openImageViewer()">
+          <img [src]="mainImage" [alt]="mainImageAlt" draggable="false"
+            [class.changing]="isImageTransitioning">
+        </button>
         <div class="detail-gallery-arrows" *ngIf="images.length > 1">
           <button type="button" aria-label="Previous image" (click)="stepImage(-1)">‹</button>
           <button type="button" aria-label="Next image" (click)="stepImage(1)">›</button>
@@ -116,5 +123,46 @@
       </p>
       <p class="detail-login-note">Secure checkout · Easy 7-day returns</p>
     </section>
+  </div>
+
+  <div
+    *ngIf="isImageViewerOpen"
+    class="image-viewer-backdrop"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+    [attr.aria-label]="(product?.name || 'Product') + ' image viewer'"
+    (click)="closeImageViewer()">
+    <button
+      type="button"
+      class="image-viewer-close"
+      aria-label="Close image viewer"
+      (click)="closeImageViewer()">
+      ×
+    </button>
+    <button
+      *ngIf="images.length > 1"
+      type="button"
+      class="image-viewer-arrow image-viewer-previous"
+      aria-label="Previous image"
+      (click)="stepImage(-1); $event.stopPropagation()">
+      ‹
+    </button>
+    <img
+      class="image-viewer-full"
+      [src]="mainImage"
+      [alt]="mainImageAlt"
+      (click)="$event.stopPropagation()">
+    <button
+      *ngIf="images.length > 1"
+      type="button"
+      class="image-viewer-arrow image-viewer-next"
+      aria-label="Next image"
+      (click)="stepImage(1); $event.stopPropagation()">
+      ›
+    </button>
+    <span *ngIf="images.length > 1" class="image-viewer-count">
+      {{ selectedImageIndex + 1 }} / {{ images.length }}
+    </span>
   </div>
 </main>

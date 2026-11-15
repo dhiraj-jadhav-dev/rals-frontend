@@ -31,10 +31,19 @@ export class StoreComponent implements OnInit {
 
   products: Product[] = [];
   filtered: Product[] = [];
+  productSkeletons = [0, 1, 2, 3];
+  productsLoading = true;
   heroBanner = DEFAULT_HERO_BANNER;
   heroError = "";
 
   selectedImage: Record<string, number> = {};
+  private imageSwipeStart: {
+    productId: string;
+    x: number;
+    y: number;
+  } | null = null;
+  private suppressedCardClickId: string | null = null;
+  private suppressedCardClickUntil = 0;
 
   search = "";
   activeCategory = "ALL";
@@ -87,6 +96,8 @@ export class StoreComponent implements OnInit {
   }
 
   loadProducts(): void {
+    this.productsLoading = true;
+    this.error = "";
     this.api.products().subscribe({
       next: (products) => {
         this.products = products || [];
@@ -95,10 +106,12 @@ export class StoreComponent implements OnInit {
         }
         this.error = "";
         this.applyFilters();
+        this.productsLoading = false;
       },
       error: () => {
         this.error =
           "Could not load products. Please check that the API is running.";
+        this.productsLoading = false;
       },
     });
   }
@@ -112,8 +125,7 @@ export class StoreComponent implements OnInit {
       list = list.filter((p) => {
         const category = p.category?.name || "";
         return (
-          category.toLowerCase().includes(term) ||
-          p.name.toLowerCase().includes(term)
+          category.toLowerCase() === term
         );
       });
     }
@@ -176,6 +188,54 @@ export class StoreComponent implements OnInit {
     const imageCount = this.imageCount(product);
     if (index < 0 || index >= imageCount) return;
     this.selectedImage[product.id] = index;
+  }
+
+  startImageSwipe(event: TouchEvent, product: Product): void {
+    if (!event.touches.length || this.imageCount(product) < 2) return;
+    const touch = event.touches[0];
+    this.imageSwipeStart = {
+      productId: product.id,
+      x: touch.clientX,
+      y: touch.clientY,
+    };
+  }
+
+  endImageSwipe(event: TouchEvent, product: Product): void {
+    const start = this.imageSwipeStart;
+    this.imageSwipeStart = null;
+    const touch = event.changedTouches[0];
+    if (!start || start.productId !== product.id || !touch) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < 45 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.2) {
+      return;
+    }
+
+    const imageCount = this.imageCount(product);
+    const current = this.selectedImage[product.id] ?? 0;
+    this.selectImage(
+      product,
+      (current + (deltaX < 0 ? 1 : -1) + imageCount) % imageCount,
+    );
+    this.suppressedCardClickId = product.id;
+    this.suppressedCardClickUntil = Date.now() + 500;
+  }
+
+  cancelImageSwipe(): void {
+    this.imageSwipeStart = null;
+  }
+
+  onProductCardClick(product: Product): void {
+    if (
+      this.suppressedCardClickId === product.id &&
+      Date.now() <= this.suppressedCardClickUntil
+    ) {
+      this.suppressedCardClickId = null;
+      this.suppressedCardClickUntil = 0;
+      return;
+    }
+    this.openProduct(product);
   }
 
   openProduct(product: Product): void {

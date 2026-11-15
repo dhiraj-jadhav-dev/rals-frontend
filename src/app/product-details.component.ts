@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from "@angular/common/http";
 import { CurrencyPipe, NgFor, NgIf } from "@angular/common";
-import { Component, OnDestroy, OnInit, inject } from "@angular/core";
+import { Component, HostListener, OnDestroy, OnInit, inject } from "@angular/core";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import { Subscription, catchError, distinctUntilChanged, map, of, switchMap, tap } from "rxjs";
 import {
@@ -34,10 +34,14 @@ export class ProductDetailsComponent implements OnInit, OnDestroy {
   quantity = 1;
   added = false;
   isImageTransitioning = false;
+  isImageViewerOpen = false;
   sizes = AVAILABLE_SIZES;
 
   private subscription?: Subscription;
   private imageTransitionTimeout?: number;
+  private imageSwipeStart: { x: number; y: number } | null = null;
+  private imageClickSuppressedUntil = 0;
+  private previousBodyOverflow: string | null = null;
 
   ngOnInit(): void {
     this.subscription = this.route.paramMap
@@ -50,6 +54,8 @@ export class ProductDetailsComponent implements OnInit, OnDestroy {
             this.imageTransitionTimeout = undefined;
           }
           this.isImageTransitioning = false;
+          this.imageSwipeStart = null;
+          this.closeImageViewer();
           this.loading = true;
           this.error = "";
           this.product = null;
@@ -89,6 +95,7 @@ export class ProductDetailsComponent implements OnInit, OnDestroy {
     if (this.imageTransitionTimeout !== undefined) {
       window.clearTimeout(this.imageTransitionTimeout);
     }
+    this.closeImageViewer();
   }
 
   get colors(): string[] {
@@ -204,6 +211,63 @@ export class ProductDetailsComponent implements OnInit, OnDestroy {
     this.changeImage(
       (this.selectedImageIndex + change + this.images.length) % this.images.length,
     );
+  }
+
+  startImageSwipe(event: TouchEvent): void {
+    if (!event.touches.length || this.images.length < 2) return;
+    const touch = event.touches[0];
+    this.imageSwipeStart = { x: touch.clientX, y: touch.clientY };
+  }
+
+  endImageSwipe(event: TouchEvent): void {
+    const start = this.imageSwipeStart;
+    this.imageSwipeStart = null;
+    const touch = event.changedTouches[0];
+    if (!start || !touch) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < 45 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.2) {
+      return;
+    }
+    this.stepImage(deltaX < 0 ? 1 : -1);
+    this.imageClickSuppressedUntil = Date.now() + 500;
+  }
+
+  cancelImageSwipe(): void {
+    this.imageSwipeStart = null;
+  }
+
+  openImageViewer(): void {
+    if (Date.now() <= this.imageClickSuppressedUntil || !this.images.length) {
+      this.imageClickSuppressedUntil = 0;
+      return;
+    }
+    if (this.isImageViewerOpen) return;
+    this.previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    this.isImageViewerOpen = true;
+  }
+
+  closeImageViewer(): void {
+    if (!this.isImageViewerOpen) return;
+    this.isImageViewerOpen = false;
+    if (this.previousBodyOverflow !== null) {
+      document.body.style.overflow = this.previousBodyOverflow;
+      this.previousBodyOverflow = null;
+    }
+  }
+
+  @HostListener("document:keydown", ["$event"])
+  onImageViewerKeydown(event: KeyboardEvent): void {
+    if (!this.isImageViewerOpen) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      this.closeImageViewer();
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      this.stepImage(event.key === "ArrowLeft" ? -1 : 1);
+    }
   }
 
   decreaseQuantity(): void {

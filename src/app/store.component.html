@@ -42,16 +42,40 @@
   <div class="filter-pills">
     <button [class.active]="activeCategory==='ALL'" (click)="chooseCategory('ALL')">ALL</button>
     <button [class.active]="activeCategory==='shirt'" (click)="chooseCategory('shirt')">SHIRTS</button>
-    <button [class.active]="activeCategory==='tee'" (click)="chooseCategory('tee')">T-SHIRTS</button>
+    <button [class.active]="activeCategory==='t-shirt'" (click)="chooseCategory('t-shirt')">T-SHIRTS</button>
     <button [class.active]="activeCategory==='bottom'" (click)="chooseCategory('bottom')">BOTTOMWEAR</button>
   </div>
   <p class="error-banner" *ngIf="error">{{error}}</p>
-  <div class="product-grid" *ngIf="filtered.length; else emptyProducts">
+  <div
+    class="product-grid product-loading-grid"
+    *ngIf="productsLoading"
+    role="status"
+    aria-live="polite"
+    aria-label="Loading products">
+    <div
+      class="product-skeleton"
+      *ngFor="let skeleton of productSkeletons"
+      aria-hidden="true">
+      <div class="product-skeleton-image"></div>
+      <div class="product-skeleton-meta">
+        <div>
+          <span class="product-skeleton-line product-skeleton-title"></span>
+          <span class="product-skeleton-line product-skeleton-category"></span>
+        </div>
+        <span class="product-skeleton-line product-skeleton-price"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="product-grid" *ngIf="!productsLoading && filtered.length">
     <article class="product-card" *ngFor="let p of filtered"
       tabindex="0" role="link" [attr.aria-label]="'View ' + p.name"
-      (click)="openProduct(p)" (keydown)="onCardKeydown($event, p)">
-      <div class="product-visual">
-        <img [src]="image(p)" [alt]="p.name" loading="lazy">
+      (click)="onProductCardClick(p)" (keydown)="onCardKeydown($event, p)">
+      <div class="product-visual"
+        (touchstart)="startImageSwipe($event, p)"
+        (touchend)="endImageSwipe($event, p)"
+        (touchcancel)="cancelImageSwipe()">
+        <img [src]="image(p)" [alt]="p.name" loading="lazy" draggable="false">
         <span class="product-label" *ngIf="badge(p) as productBadge"
           [class.stock-label]="productBadge === 'OUT OF STOCK'"
           [class.lime-label]="productBadge === 'SALE'">{{productBadge}}</span>
@@ -78,13 +102,11 @@
           OFF</span></div>
     </article>
   </div>
-  <ng-template #emptyProducts>
-    <div class="empty-state">
+  <div class="empty-state" *ngIf="!productsLoading && !error && !filtered.length">
       <span>✳</span>
       <h3>No styles found</h3>
       <p>Try another search or category.</p>
-    </div>
-  </ng-template>
+  </div>
 </section>
 
 <section class="campaign-banner">

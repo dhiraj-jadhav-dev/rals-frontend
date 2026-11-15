@@ -597,8 +597,8 @@ export class AdminComponent implements OnInit {
     }
 
     payload.images = this.persistableImages(images);
-    payload.variants = this.newProductVariants.map((variant, index) => ({
-      sku: this.createSku(this.product.name, variant.size, variant.color, index),
+    payload.variants = this.newProductVariants.map((variant) => ({
+      sku: this.createSku(this.product.name, variant.size, variant.color),
       size: variant.size.trim().toUpperCase(),
       color: variant.color.trim(),
       stock: Number(variant.stock),
@@ -652,7 +652,6 @@ export class AdminComponent implements OnInit {
     productName: string,
     size: string,
     color: string,
-    index = 0,
   ): string {
     const productCode = productName
       .trim()
@@ -665,7 +664,7 @@ export class AdminComponent implements OnInit {
       .toUpperCase()
       .replace(/[^A-Z0-9]+/g, "")
       .slice(0, 8);
-    return `RALS-${productCode}-${size}-${colorCode}-${Date.now()}-${index}`;
+    return `RALS-${productCode}-${size}-${colorCode}-${crypto.randomUUID().toUpperCase()}`;
   }
 
   private clearPendingImages(): void {
